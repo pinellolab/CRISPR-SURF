@@ -2735,7 +2735,8 @@ app2.layout = html.Div([
         tabs=[
             {'label': 'Step 1: Choose Dataset', 'value': 'dataset'},
             {'label': 'Step 2: View sgRNA Table', 'value': 'table'},
-            {'label': 'Step 3: View Results', 'value': 'deconvolution'}
+            {'label': 'Step 3: View Results', 'value': 'deconvolution'},
+            {'label': 'Step 4: View Significant Regions', 'value': 'significance'}
         ],
         value='dataset',
         id='tabs',
@@ -2750,7 +2751,7 @@ app2.layout = html.Div([
             options=[
                 {'label': 'Canver et al. 2015 BCL11A CRISPR-Cas9', 'value': 'Canver_2015'},
                 {'label': 'Fulco et al. 2016 MYC CRISPRi', 'value': 'Fulco_2016'},
-                {'label': 'Simeonov et al. 2017 IL2RA CRISPRa', 'value': 'Simeonov_2017'},
+                {'label': 'Simeonov and Gowen et al. 2017 IL2RA CRISPRa', 'value': 'Simeonov_Gowen_2017'},
                 {'label': 'Hsu et al. 2018 BCL11A CRISPRi', 'value': 'Hsu_CRISPRi_2018'},
                 {'label': 'Hsu et al. 2018 BCL11A CRISPR-Cas9', 'value': 'Hsu_Cas9_2018'},
             ],
@@ -2765,6 +2766,28 @@ app2.layout = html.Div([
         dt.DataTable(id='sgRNA-table-view', filterable=True, sortable=True, column_widths = [250]*100000, rows=[{}]),
 
         ], className = 'row', style = {'display':'none'}),
+
+    html.Div(id = 'significance-container-total', children = [
+
+        html.H3('View Significant Regions'),
+
+        html.Div(id = 'significance-container', children = [
+
+            html.A(
+                html.Button('Download IGV Session'),
+                id='download-total',
+                download = "igv-tracks.zip",
+                href="",
+                target="_blank",
+                n_clicks = 0,
+                style = {'font-weight':'bold', 'font-size':'100%', 'text-align':'center'}
+                ),
+
+            dt.DataTable(id='regions-table-view', filterable=True, sortable=True, column_widths = [250]*100000, rows=[{}], columns = ['FDR','Chr','Start','Stop','Direction','Deconvolved_Signal_Area','Deconvolved_Signal_Mean','Padj_Mean','Supporting_sgRNAs']),
+
+            ]),
+
+        ], style = {'display':'none'}),
 
     html.Div(id = 'deconvolution-container-total', children = [
 
@@ -2881,6 +2904,18 @@ def display_content(value, pathname):
 def display_content(value, pathname):
 
     if value == 'deconvolution':
+        return {'display':'block'}
+    else:
+        return {'display':'none'}
+
+@app2.callback(
+    Output('significance-container-total', 'style'),
+    [Input('tabs', 'value')],
+    state = [State('url', 'pathname')])
+
+def display_content(value, pathname):
+
+    if value == 'significance':
         return {'display':'block'}
     else:
         return {'display':'none'}
@@ -3066,7 +3101,7 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
 
             boundary_start = int(i)
             boundary_stop = int(j)
-            
+
             genomic_boundary_start = int(df2['Index'][boundary_start])
             genomic_boundary_stop = int(df2['Index'][boundary_stop])
 
@@ -3116,6 +3151,48 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
                 title='Raw Scores and Deconvolution')
 
         return fig
+
+### CALLBACKS FOR SIGNIFICANCE VIEW ###
+@app2.callback(Output('regions-table-view', 'rows'),
+              [Input('dataset', 'value')])
+
+def update_output(dataset):
+
+    sig_regions = '/SURF/precomputed/%s/SURF_result/significant_regions.csv' % (dataset)
+
+    largest_row = 0
+    with open(sig_regions, 'r') as f:
+        for line in f:
+            line = line.strip().split(',')
+            if len(line) > largest_row:
+                largest_row = len(line)
+
+    df = pd.read_csv(sig_regions, names = range(largest_row))
+    df.columns = df.iloc[0]
+    df = df.reindex(df.index.drop(0))
+
+    df = df[['FDR','Chr','Start','Stop','Direction','Deconvolved_Signal_Area','Deconvolved_Signal_Mean','Padj_Mean','Supporting_sgRNAs']]
+    return df.to_dict('records')
+
+@app2.callback(Output('regions-table-view', 'columns'),
+              [Input('dataset', 'value')])
+def update_output(dataset):
+
+    sig_regions = '/SURF/precomputed/%s/SURF_result/significant_regions.csv' % (dataset)
+
+    largest_row = 0
+    with open(sig_regions, 'r') as f:
+        for line in f:
+            line = line.strip().split(',')
+            if len(line) > largest_row:
+                largest_row = len(line)
+
+    df = pd.read_csv(sig_regions, names = range(largest_row))
+    df.columns = df.iloc[0]
+    df = df.reindex(df.index.drop(0))
+
+    df = df[['FDR','Chr','Start','Stop','Direction','Deconvolved_Signal_Area','Deconvolved_Signal_Mean','Padj_Mean','Supporting_sgRNAs']]
+    return df.columns
 
 def main():
     app.run_server(debug = True, processes = 5, port = 9992, host = '0.0.0.0')

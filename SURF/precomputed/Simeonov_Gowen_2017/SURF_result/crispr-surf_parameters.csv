@@ -1,0 +1,19 @@
+Argument,Value
+averaging_method,median
+characteristic_perturbation_range,200
+correlation_ratio,0.8
+effect_size,1
+gamma,0
+gamma_list,1.0 1.5 2.0 4.0 6.0 8.0 10.0 12.0 14.0 16.0 18.0 20.0 30.0 40.0 50.0 60.0 70.0 80.0 100.0 150.0 200.0 250.0 300.0 350.0 400.0 450.0 500.0
+gamma_used,6.0
+genome,hg19
+limit,300
+out_directory,0.8_rep2
+padj_cutoffs,0.05
+perturbation_type,crispra
+rapid_mode,f
+replicate_parameters [loc/scale],[-0.63542763599999996/1.4895629693476073],[-0.77136120099999994/1.6932018075266342]
+scale,20
+sgRNA_summary_file,CRISPRa_TOTAL_sgRNAs_summary_table.csv
+simulation_n,10000
+simulation_type,gaussian

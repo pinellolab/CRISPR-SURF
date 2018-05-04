@@ -3045,7 +3045,13 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
         # Find indices with significant padj-values
         fdr = float(param_dict['fdr'])
         significant_boundary_indices = []
-        padj_list = [float(x) for x in df2['Pval_adj.']]
+        padj_list = []
+        for padj in df2['Pval_adj.']:
+            try:
+                padj_list.append(float(padj))
+            except:
+                padj_list.append(0)
+
         for i in range(len(boundaries) - 1):
             start_index, stop_index = boundaries[i], boundaries[i + 1]
             significant_indices = [1 if x < fdr else 0 for x in padj_list[start_index:stop_index]]
@@ -3060,9 +3066,7 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
 
             boundary_start = int(i)
             boundary_stop = int(j)
-
-            print boundary_start, boundary_stop
-
+            
             genomic_boundary_start = int(df2['Index'][boundary_start])
             genomic_boundary_stop = int(df2['Index'][boundary_stop])
 

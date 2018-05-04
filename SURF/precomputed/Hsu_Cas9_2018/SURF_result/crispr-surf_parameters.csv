@@ -1,0 +1,19 @@
+Argument,Value
+averaging_method,median
+characteristic_perturbation_range,7
+correlation_ratio,0.8
+effect_size,1
+gamma,0
+gamma_list,0.02 0.04 0.06 0.08 0.1 0.2 0.4 0.6 0.8 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 12.0 14.0 16.0 18.0 20.0 30.0 40.0 50.0 60.0 70.0 80.0 90.0 100.0
+gamma_used,20.0
+genome,hg19
+limit,25
+out_directory,rep2
+padj_cutoffs,0.05
+perturbation_type,cas9
+rapid_mode,f
+replicate_parameters [loc/scale],[0.005625561429893261/1.0210402216682859],[-0.032242809325223498/1.0556288746162685],[-0.018683939381514955/0.79468445249462438]
+scale,1
+sgRNA_summary_file,sgRNAs_summary_table.csv
+simulation_n,10000
+simulation_type,gaussian

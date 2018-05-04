@@ -202,7 +202,7 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 		# Set up regularized deconvolution optimization problem
 		df = pd.DataFrame({'pos':rescaled_sgRNA_indices_w_obs, 'lfc':rescaled_observations, 'group':groups, 'chr': rescaled_chromosomes})
 
-		df.to_csv('rescaled_indices.csv')
+		# df.to_csv('rescaled_indices.csv')
 
 		genomic_coordinates = []
 		chromosomes_final = []
@@ -220,10 +220,15 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 			# if len(dff.index) > 1:
 
 			# Assign relevant variables for optimization problem
-			y = dff.lfc.tolist()
+			# y = dff.lfc.tolist()
+			print 'buffer 0 x 1'
+			y = [0]*1 + dff.lfc.tolist() + [0]*1
 			betas = Variable(len(np.arange(dff.pos.tolist()[0], dff.pos.tolist()[-1], scale).tolist()) + maximum_distance)
 
-			x_shift = [int(maximum_distance + (x - dff.pos.tolist()[0])/int(scale) - 1) for x in dff.pos.tolist()]
+			# x_shift = [int(maximum_distance + (x - dff.pos.tolist()[0])/int(scale) - 1) for x in dff.pos.tolist()]
+			x_shift_tmp = [int(maximum_distance + (x - dff.pos.tolist()[0])/int(scale) - 1) for x in dff.pos.tolist()]
+
+			x_shift = list(range(x_shift_tmp[0] - 1, x_shift_tmp[0])) + x_shift_tmp + list(range(x_shift_tmp[-1] + 1, x_shift_tmp[-1] + 2))
 
 			gamma = Parameter(sign = "positive")
 

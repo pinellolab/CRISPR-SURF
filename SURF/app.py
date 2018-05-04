@@ -274,7 +274,7 @@ app.layout = html.Div([
                                 {'label': 'CRISPR Activation', 'value': 'crispra'},
                                 {'label': 'Base Editor', 'value': 'be'}
                             ],
-                            value = 'crispri',
+                            value = 'cas9',
                         ),
 
                         ], className = 'four columns'),
@@ -731,16 +731,6 @@ app.layout = html.Div([
     html.Div(id = 'tmp8', style = {'display':'none'}),
     html.Div(id = 'tmp9', style = {'display':'none'}),
     html.Div(id = 'tmp10', style = {'display':'none'}),
-    html.Div(id = 'tmp11', style = {'display':'none'}),
-    html.Div(id = 'tmp12', style = {'display':'none'}),
-    html.Div(id = 'tmp13', style = {'display':'none'}),
-    html.Div(id = 'tmp14', style = {'display':'none'}),
-    html.Div(id = 'tmp15', style = {'display':'none'}),
-    html.Div(id = 'tmp16', style = {'display':'none'}),
-    html.Div(id = 'tmp17', style = {'display':'none'}),
-    html.Div(id = 'tmp18', style = {'display':'none'}),
-    html.Div(id = 'tmp19', style = {'display':'none'}),
-    html.Div(id = 'tmp20', style = {'display':'none'}),
 
     ])
 
@@ -1176,42 +1166,6 @@ def download_file(contents, filename, n_clicks, pathname):
 
 
     return 'Upload Status: Incomplete'
-
-
-# @app.callback(Output('tmp6', 'style'),
-#               [Input('example-data-button', 'n_clicks')],
-#                state = [State('url', 'pathname')])
-
-# def download_file(n_clicks, pathname):
-
-#     if n_clicks > 0:
-
-#         UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
-#         sb.call('cp /SURF/exampleDataset/sgRNAs_summary_table.csv %s/sgRNAs_summary_table.csv' % (UPLOADS_FOLDER), shell = True)
-
-#         sgRNA_summary = UPLOADS_FOLDER + '/sgRNAs_summary_table.csv'
-#         df = pd.read_csv(sgRNA_summary)
-
-#         with open(UPLOADS_FOLDER + '/data.json', 'r') as f:
-#             json_string = f.readline().strip()
-#             data_dict = json.loads(json_string)
-
-#         with open(UPLOADS_FOLDER + '/data2.json', 'r') as f:
-#             json_string = f.readline().strip()
-#             data_dict2 = json.loads(json_string)
-
-#         data_dict['chr'] = [str(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Chr']).flatten().tolist()][0]
-#         data_dict2['chr'] = [str(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Chr']).flatten().tolist()][0]
-
-#         with open(UPLOADS_FOLDER + '/data.json', 'w') as f:
-#             new_json_string = json.dumps(data_dict)
-#             f.write(new_json_string + '\n')
-
-#         with open(UPLOADS_FOLDER + '/data2.json', 'w') as f:
-#             new_json_string = json.dumps(data_dict)
-#             f.write(new_json_string + '\n')
-
-#     return {'display': 'none'}
 
 @app.callback(Output('sgRNA-table-view', 'rows'),
               [Input('upload-data', 'contents'),
@@ -2770,8 +2724,394 @@ def generate_report_url(directory):
     return send_file('/tmp/RESULTS_FOLDER/%s/surf-outputs.zip' % (directory), attachment_filename = 'surf-outputs.zip', as_attachment = True)
 
 ### Precomputed Layout ###
-app2.layout = html.Div(['lol'])
+app2.layout = html.Div([
 
+    dcc.Location(id='url', refresh=False),
+
+    html.Img(src='data:image/png;base64,{}'.format(crisprsurf_logo_image), width = '50%'),
+    html.H2('CRISPR Screening Uncharacterized Region Function'),
+
+    dcc.Tabs(
+        tabs=[
+            {'label': 'Step 1: Choose Dataset', 'value': 'dataset'},
+            {'label': 'Step 2: View sgRNA Table', 'value': 'table'},
+            {'label': 'Step 3: View Results', 'value': 'deconvolution'}
+        ],
+        value='dataset',
+        id='tabs',
+        style = {'font-weight':'bold'}
+    ),
+
+    html.Div(id = 'dataset-container-total', children = [
+
+        html.H3('Choose Dataset'),
+        dcc.Dropdown(
+            id = 'dataset',
+            options=[
+                {'label': 'Canver et al. 2015 BCL11A CRISPR-Cas9', 'value': 'Canver_2015'},
+                {'label': 'Fulco et al. 2016 MYC CRISPRi', 'value': 'Fulco_2016'},
+                {'label': 'Simeonov et al. 2017 IL2RA CRISPRa', 'value': 'Simeonov_2017'},
+                {'label': 'Hsu et al. 2018 BCL11A CRISPRi', 'value': 'Hsu_CRISPRi_2018'},
+                {'label': 'Hsu et al. 2018 BCL11A CRISPR-Cas9', 'value': 'Hsu_Cas9_2018'},
+            ],
+            value = 'Canver_2015',
+        ),
+
+        ]),
+
+    html.Div(id = 'table-container-total', children = [
+
+        # Drag and Drop upload component
+        dt.DataTable(id='sgRNA-table-view', filterable=True, sortable=True, column_widths = [250]*100000, rows=[{}]),
+
+        ], className = 'row', style = {'display':'none'}),
+
+    html.Div(id = 'deconvolution-container-total', children = [
+
+        html.H3('View Deconvolution'),
+
+        html.Div(id = 'deconvolution-container', children = [
+
+            html.Div([
+
+                html.Div([
+
+                    html.Div([
+
+                        html.Div([
+
+                            html.Label('Chr', style = {'font-weight':'bold'}),
+                            dcc.Dropdown(
+                                id = 'chr',
+                                options=[],
+                                value = None
+                            ),
+
+                            ], className = 'three columns'),
+
+                        html.Div([
+
+                            html.Label('Start', style = {'font-weight':'bold'}),
+                            dcc.Input(
+                                id = 'start',
+                                type = 'text',
+                                placeholder='Enter Start Coordinate ...',
+                                ),
+
+                            ], className = 'three columns', style = {'text-align':'center'}),
+
+                        html.Div([
+
+                            html.Label('Stop', style = {'font-weight':'bold'}),
+                            dcc.Input(
+                                id = 'stop',
+                                type = 'text',
+                                placeholder='Enter Stop Coordinate ...',
+                                ),
+
+                            ], className = 'three columns', style = {'text-align':'center'}),
+
+                        html.Div([
+
+                            html.Br(),
+                            # html.Br(),
+
+                            html.Button(id = 'update-graph-button1', children = 'Update Graph'),
+
+                            ], className = 'three columns', style = {'text-align':'left'}),
+
+                        ], className = 'row'),
+
+                    ], className = 'eight columns'),
+
+                ], className = 'row'),
+
+            ]),
+
+        dcc.Graph(id='deconvolution-plot', animate=False),
+
+        ], style = {'display':'none'}),
+
+    html.Br(),
+    html.Br(),
+
+    html.Div(id = 'tmp11', style = {'display':'none'}),
+    html.Div(id = 'tmp12', style = {'display':'none'}),
+    html.Div(id = 'tmp13', style = {'display':'none'}),
+    html.Div(id = 'tmp14', style = {'display':'none'}),
+    html.Div(id = 'tmp15', style = {'display':'none'}),
+    html.Div(id = 'tmp16', style = {'display':'none'}),
+    html.Div(id = 'tmp17', style = {'display':'none'}),
+    html.Div(id = 'tmp18', style = {'display':'none'}),
+    html.Div(id = 'tmp19', style = {'display':'none'}),
+    html.Div(id = 'tmp20', style = {'display':'none'}),
+
+    ])
+
+# Pseudo tabs code
+@app2.callback(
+    Output('dataset-container-total', 'style'),
+    [Input('tabs', 'value')],
+    state = [State('url', 'pathname')])
+
+def display_content(value, pathname):
+
+    if value == 'dataset':
+        return {'display':'block'}
+    else:
+        return {'display':'none'}
+
+@app2.callback(
+    Output('table-container-total', 'style'),
+    [Input('tabs', 'value')],
+    state = [State('url', 'pathname')])
+
+def display_content(value, pathname):
+
+    if value == 'table':
+        return {'display':'block'}
+    else:
+        return {'display':'none'}
+
+@app2.callback(
+    Output('deconvolution-container-total', 'style'),
+    [Input('tabs', 'value')],
+    state = [State('url', 'pathname')])
+
+def display_content(value, pathname):
+
+    if value == 'deconvolution':
+        return {'display':'block'}
+    else:
+        return {'display':'none'}
+
+### CALLBACKS FOR TABLE VIEW ###
+@app2.callback(Output('sgRNA-table-view', 'rows'),
+              [Input('dataset', 'value')])
+
+def update_output(dataset):
+
+    sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
+    df = pd.read_csv(sgRNA_summary)
+    return df.to_dict('records')
+
+@app2.callback(Output('sgRNA-table-view', 'columns'),
+              [Input('dataset', 'value')])
+def update_output(dataset):
+
+    sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
+    df = pd.read_csv(sgRNA_summary)
+    return df.columns
+
+### CALLBACKS FOR DECONVOLUTION ###
+@app2.callback(
+    Output('chr', 'options'),
+    [Input('dataset', 'value')])
+
+def update_chr(dataset):
+
+    sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
+    df = pd.read_csv(sgRNA_summary)
+
+    df = df.loc[df['sgRNA_Type'] != 'negative_control']
+    df = df.dropna(axis=0, how='any')
+
+    unique_chr = [x for x in df['Chr'].unique()]
+
+    return [{'label':entry, 'value':entry} for entry in unique_chr]
+
+@app2.callback(Output('chr', 'value'),
+              [Input('dataset', 'value')])
+
+def initialize_chr(dataset):
+
+    sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
+    df = pd.read_csv(sgRNA_summary)
+
+    df = df.loc[df['sgRNA_Type'] != 'negative_control']
+    df = df.dropna(axis=0, how='any')
+
+    unique_chr = [x for x in df['Chr'].unique()]
+
+    return unique_chr[0]
+
+@app2.callback(
+    Output('deconvolution-plot', 'figure'),
+    [Input('dataset', 'value'),
+    Input('update-graph-button1', 'n_clicks'),
+    Input('tabs', 'value'),],
+    state = [
+    State('chr', 'value'),
+    State('start', 'value'),
+    State('stop', 'value')])
+
+def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, stop):
+
+    if tab == 'deconvolution':
+
+        fig = tools.make_subplots(rows=3, cols=1, specs=[[{}], [{}], [{}]],
+                                  shared_xaxes=True, shared_yaxes=True,
+                                  vertical_spacing=0.1)
+
+        sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
+        df = pd.read_csv(sgRNA_summary)
+        replicates = sorted([x for x in df.columns.tolist() if 'Log2FC_Replicate' in x])
+
+        df = df.loc[df['sgRNA_Type'] != 'negative_control']
+        df = df.dropna(axis=0, how='any')
+
+        if chrom is None:
+            unique_chr = [x for x in df['Chr'].unique()]
+            chrom = unique_chr[0]
+
+        df = df.loc[df['Chr'] == chrom]
+
+        for replicate in replicates:
+
+            fig.append_trace(go.Scatter(
+                x=df['Perturbation_Index'],
+                y=df[replicate],
+                text=replicate,
+                mode='markers',
+                opacity=0.5,
+                marker={
+                    'size': 6,
+                    'line': {'width': 0.3, 'color': 'white'}
+                },
+                name= replicate,
+                # yaxis = 'y1'
+            ), 1, 1)
+
+        beta_profile = '/SURF/precomputed/%s/SURF_result/beta_profile.csv' % (dataset)
+        df2 = pd.read_csv(beta_profile)
+
+        # Filter for chrom
+        indices_filt = []
+        y_p_filt = []
+        power_filt = []
+
+        for chrom_i, coord_i, value_i, power_i in zip(df2['Chr'], df2['Index'], df2['Beta'], df2['Statistical_Power']):
+            if chrom_i == chrom:
+                indices_filt.append(int(coord_i))
+                y_p_filt.append(float(value_i))
+                power_filt.append(float(power_i))
+
+        # Boundaries of inference
+        parameters_json = '/SURF/precomputed/%s/%s.json' % (dataset, dataset)
+
+        with open(parameters_json, 'r') as f:
+            json_string = f.readline().strip()
+            param_dict = json.loads(json_string)
+
+        scale_val = int(param_dict['scale'])
+
+        diff_vec = [0] + list(np.diff(indices_filt))
+
+        boundaries = [0]
+        for index, value in enumerate(diff_vec):
+            try:
+                if int(value) > int(scale_val):
+                    boundaries.append(index)
+            except:
+                pass
+
+        boundaries = sorted(boundaries)
+
+        boundaries.append(len(indices_filt))
+
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + power_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                # yaxis = 'y2',
+                line=dict(color='rgb(255,165,0)')), 2, 1)
+
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1], y=[0] + y_p_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                yaxis = 'y4',
+                showlegend=False,
+                line=dict(color='rgb(169,169,169)')), 3, 1)
+
+        # Find indices with significant padj-values
+        fdr = float(param_dict['fdr'])
+        significant_boundary_indices = []
+        padj_list = [float(x) for x in df2['Pval_adj.']]
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+            significant_indices = [1 if x < fdr else 0 for x in padj_list[start_index:stop_index]]
+            significant_boundary_indices_tmp = [j + start_index for j, k in enumerate(np.diff([0] + significant_indices)) if k != 0]
+
+            if len(significant_boundary_indices_tmp)%2 == 1:
+                significant_boundary_indices_tmp.append(stop_index - 1)
+
+            significant_boundary_indices += significant_boundary_indices_tmp
+
+        for i, j in zip(significant_boundary_indices[0::2], significant_boundary_indices[1::2]):
+
+            boundary_start = int(i)
+            boundary_stop = int(j)
+
+            print boundary_start, boundary_stop
+
+            genomic_boundary_start = int(df2['Index'][boundary_start])
+            genomic_boundary_stop = int(df2['Index'][boundary_stop])
+
+            signal_mean = np.mean(df2['Beta'][boundary_start:boundary_stop])
+
+            if signal_mean > np.median(df2['Beta']):
+                fig.append_trace(go.Scatter(
+                    x=[genomic_boundary_start, genomic_boundary_stop],
+                    y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+                    mode = 'lines',
+                    # fill='tozeroy',
+                    showlegend=False,
+                    yaxis = 'y2',
+                    line=dict(color='rgb(255,0,0)', width = 5)), 3, 1)
+            else:
+                fig.append_trace(go.Scatter(
+                    x=[genomic_boundary_start, genomic_boundary_stop],
+                    y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
+                    mode = 'lines',
+                    # fill='tozeroy',
+                    showlegend=False,
+                    yaxis = 'y2',
+                    line=dict(color='rgb(30,144,255)', width = 5)), 3, 1)
+
+        try:
+            start = int(start)
+            stop = int(stop)
+            fig['layout'].update(
+                height=800,
+                autosize = True,
+                xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
+                yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
+                yaxis2={'domain':[0.4, 0.6], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+                yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
+                hovermode='closest',
+                title='Raw Scores and Deconvolution')
+
+        except:
+            fig['layout'].update(
+                height=800,
+                autosize = True,
+                xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False},
+                yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
+                yaxis2={'domain':[0.4, 0.6], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+                yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
+                hovermode='closest',
+                title='Raw Scores and Deconvolution')
+
+        return fig
 
 def main():
     app.run_server(debug = True, processes = 5, port = 9992, host = '0.0.0.0')

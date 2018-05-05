@@ -2890,7 +2890,7 @@ def display_content(value, pathname):
 
 def update_chr(dataset):
 
-    sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
+    sgRNA_summary = '/SURF/web_app/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
     df = pd.read_csv(sgRNA_summary)
 
     df = df.loc[df['sgRNA_Type'] != 'negative_control']
@@ -2905,7 +2905,7 @@ def update_chr(dataset):
 
 def initialize_chr(dataset):
 
-    sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
+    sgRNA_summary = '/SURF/web_app/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
     df = pd.read_csv(sgRNA_summary)
 
     df = df.loc[df['sgRNA_Type'] != 'negative_control']
@@ -2931,7 +2931,7 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
                               shared_xaxes=True, shared_yaxes=True,
                               vertical_spacing=0.1)
 
-    sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
+    sgRNA_summary = '/SURF/web_app/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
     df = pd.read_csv(sgRNA_summary)
     replicates = sorted([x for x in df.columns.tolist() if 'Log2FC_Replicate' in x])
 
@@ -2967,7 +2967,7 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
             # yaxis = 'y1'
         ), 1, 1)
 
-    beta_profile = '/SURF/precomputed/%s/SURF_result/beta_profile.csv' % (dataset)
+    beta_profile = '/SURF/web_app/precomputed/%s/SURF_result/beta_profile.csv' % (dataset)
     df2 = pd.read_csv(beta_profile)
 
     # Filter for chrom
@@ -2982,7 +2982,7 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
             power_filt.append(float(power_i))
 
     # Boundaries of inference
-    parameters_json = '/SURF/precomputed/%s/%s.json' % (dataset, dataset)
+    parameters_json = '/SURF/web_app/precomputed/%s/%s.json' % (dataset, dataset)
 
     with open(parameters_json, 'r') as f:
         json_string = f.readline().strip()
@@ -3108,7 +3108,7 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
 
 def update_output(dataset):
 
-    sig_regions = '/SURF/precomputed/%s/SURF_result/significant_regions.csv' % (dataset)
+    sig_regions = '/SURF/web_app/precomputed/%s/SURF_result/significant_regions.csv' % (dataset)
 
     largest_row = 0
     with open(sig_regions, 'r') as f:
@@ -3128,7 +3128,7 @@ def update_output(dataset):
               [Input('dataset', 'value')])
 def update_output(dataset):
 
-    sig_regions = '/SURF/precomputed/%s/SURF_result/significant_regions.csv' % (dataset)
+    sig_regions = '/SURF/web_app/precomputed/%s/SURF_result/significant_regions.csv' % (dataset)
 
     largest_row = 0
     with open(sig_regions, 'r') as f:
@@ -3150,13 +3150,13 @@ def update_output(dataset):
 
 def update_link(dataset):
 
-    igv_sesh = '/SURF/precomputed/%s/SURF_result/igv_session.zip' % (dataset)
+    igv_sesh = '/SURF/web_app/precomputed/%s/SURF_result/igv_session.zip' % (dataset)
     return igv_sesh
 
-@app2.server.route('/SURF/precomputed/<directory>/SURF_result/igv_session.zip')
+@app2.server.route('/SURF/web_app/precomputed/<directory>/SURF_result/igv_session.zip')
 def generate_report_url2(directory):
 
-    return send_file('/SURF/precomputed/%s/SURF_result/igv_session.zip' % (directory), attachment_filename = 'igv_session.zip', as_attachment = True)
+    return send_file('/SURF/web_app/precomputed/%s/SURF_result/igv_session.zip' % (directory), attachment_filename = 'igv_session.zip', as_attachment = True)
 
 def main():
     app.run_server(debug = True, processes = 5, port = 9992, host = '0.0.0.0')

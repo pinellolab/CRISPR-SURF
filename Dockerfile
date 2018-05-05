@@ -39,9 +39,9 @@ RUN apt-get update && apt-get install zip -y
 
 # create environment
 COPY SURF /SURF
-COPY /SURF/static/CRISPR-SURF.css /opt/conda/lib/python2.7/site-packages/dash_core_components/
-COPY /SURF/static/Loading-State.css /opt/conda/lib/python2.7/site-packages/dash_core_components/
-COPY /SURF/static/jquery-3.3.1.min.js /opt/conda/lib/python2.7/site-packages/dash_core_components/
+#COPY /SURF/static/CRISPR-SURF.css /opt/conda/lib/python2.7/site-packages/dash_core_components/
+#COPY /SURF/static/Loading-State.css /opt/conda/lib/python2.7/site-packages/dash_core_components/
+#COPY /SURF/static/jquery-3.3.1.min.js /opt/conda/lib/python2.7/site-packages/dash_core_components/
 RUN mkdir /tmp/UPLOADS_FOLDER
 RUN mkdir /tmp/RESULTS_FOLDER
 

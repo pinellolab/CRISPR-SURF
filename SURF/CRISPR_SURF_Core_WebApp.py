@@ -221,7 +221,6 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 
 			# Assign relevant variables for optimization problem
 			# y = dff.lfc.tolist()
-			print 'buffer 0 x 1'
 			y = [0]*1 + dff.lfc.tolist() + [0]*1
 			betas = Variable(len(np.arange(dff.pos.tolist()[0], dff.pos.tolist()[-1], scale).tolist()) + maximum_distance)
 

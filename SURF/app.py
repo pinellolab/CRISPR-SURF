@@ -2733,8 +2733,8 @@ app2.layout = html.Div([
 
     dcc.Tabs(
         tabs=[
-            {'label': 'Step 1: Visualize Datasets', 'value': 'dataset'},
-            {'label': 'Step 2: Download IGV Session', 'value': 'significance'}
+            {'label': 'Visualize Datasets', 'value': 'dataset'},
+            {'label': 'Download IGV Session', 'value': 'significance'}
         ],
         value='dataset',
         id='tabs',
@@ -3084,7 +3084,7 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
             autosize = True,
             xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
             yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
-            yaxis2={'domain':[0.4, 0.6], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+            yaxis2={'domain':[0.45, 0.55], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
             yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
             hovermode='closest',
             title='Raw Scores and Deconvolution')
@@ -3095,7 +3095,7 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
             autosize = True,
             xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False},
             yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
-            yaxis2={'domain':[0.4, 0.6], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+            yaxis2={'domain':[0.45, 0.55], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
             yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
             hovermode='closest',
             title='Raw Scores and Deconvolution')

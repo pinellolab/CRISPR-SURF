@@ -2733,10 +2733,8 @@ app2.layout = html.Div([
 
     dcc.Tabs(
         tabs=[
-            {'label': 'Step 1: Choose Dataset', 'value': 'dataset'},
-            {'label': 'Step 2: View sgRNA Table', 'value': 'table'},
-            {'label': 'Step 3: View Results', 'value': 'deconvolution'},
-            {'label': 'Step 4: View Significant Regions', 'value': 'significance'}
+            {'label': 'Step 1: Visualize Datasets', 'value': 'dataset'},
+            {'label': 'Step 2: Download IGV Session', 'value': 'significance'}
         ],
         value='dataset',
         id='tabs',
@@ -2758,40 +2756,7 @@ app2.layout = html.Div([
             value = 'Canver_2015',
         ),
 
-        ]),
-
-    html.Div(id = 'table-container-total', children = [
-
-        # Drag and Drop upload component
-        dt.DataTable(id='sgRNA-table-view', filterable=True, sortable=True, column_widths = [250]*100000, rows=[{}]),
-
-        ], className = 'row', style = {'display':'none'}),
-
-    html.Div(id = 'significance-container-total', children = [
-
-        html.H3('View Significant Regions'),
-
-        html.Div(id = 'significance-container', children = [
-
-            html.A(
-                html.Button('Download IGV Session'),
-                id='download-total',
-                download = "igv-tracks.zip",
-                href="",
-                target="_blank",
-                n_clicks = 0,
-                style = {'font-weight':'bold', 'font-size':'100%', 'text-align':'center'}
-                ),
-
-            dt.DataTable(id='regions-table-view', filterable=True, sortable=True, column_widths = [250]*100000, rows=[{}], columns = ['FDR','Chr','Start','Stop','Direction','Deconvolved_Signal_Area','Deconvolved_Signal_Mean','Padj_Mean','Supporting_sgRNAs']),
-
-            ]),
-
-        ], style = {'display':'none'}),
-
-    html.Div(id = 'deconvolution-container-total', children = [
-
-        html.H3('View Deconvolution'),
+        html.Hr(),
 
         html.Div(id = 'deconvolution-container', children = [
 
@@ -2853,6 +2818,28 @@ app2.layout = html.Div([
 
         dcc.Graph(id='deconvolution-plot', animate=False),
 
+        ]),
+
+    html.Div(id = 'significance-container-total', children = [
+
+        html.H3('View Significant Regions'),
+
+        html.Div(id = 'significance-container', children = [
+
+            html.A(
+                html.Button('Download IGV Session'),
+                id='download-total',
+                download = "igv-session.zip",
+                href="",
+                target="_blank",
+                n_clicks = 0,
+                style = {'font-weight':'bold', 'font-size':'100%', 'text-align':'center'}
+                ),
+
+            dt.DataTable(id='regions-table-view', filterable=True, sortable=True, column_widths = [250]*100000, rows=[{}], columns = ['FDR','Chr','Start','Stop','Direction','Deconvolved_Signal_Area','Deconvolved_Signal_Mean','Padj_Mean','Supporting_sgRNAs']),
+
+            ]),
+
         ], style = {'display':'none'}),
 
     html.Br(),
@@ -2885,30 +2872,6 @@ def display_content(value, pathname):
         return {'display':'none'}
 
 @app2.callback(
-    Output('table-container-total', 'style'),
-    [Input('tabs', 'value')],
-    state = [State('url', 'pathname')])
-
-def display_content(value, pathname):
-
-    if value == 'table':
-        return {'display':'block'}
-    else:
-        return {'display':'none'}
-
-@app2.callback(
-    Output('deconvolution-container-total', 'style'),
-    [Input('tabs', 'value')],
-    state = [State('url', 'pathname')])
-
-def display_content(value, pathname):
-
-    if value == 'deconvolution':
-        return {'display':'block'}
-    else:
-        return {'display':'none'}
-
-@app2.callback(
     Output('significance-container-total', 'style'),
     [Input('tabs', 'value')],
     state = [State('url', 'pathname')])
@@ -2919,24 +2882,6 @@ def display_content(value, pathname):
         return {'display':'block'}
     else:
         return {'display':'none'}
-
-### CALLBACKS FOR TABLE VIEW ###
-@app2.callback(Output('sgRNA-table-view', 'rows'),
-              [Input('dataset', 'value')])
-
-def update_output(dataset):
-
-    sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
-    df = pd.read_csv(sgRNA_summary)
-    return df.to_dict('records')
-
-@app2.callback(Output('sgRNA-table-view', 'columns'),
-              [Input('dataset', 'value')])
-def update_output(dataset):
-
-    sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
-    df = pd.read_csv(sgRNA_summary)
-    return df.columns
 
 ### CALLBACKS FOR DECONVOLUTION ###
 @app2.callback(
@@ -2973,184 +2918,189 @@ def initialize_chr(dataset):
 @app2.callback(
     Output('deconvolution-plot', 'figure'),
     [Input('dataset', 'value'),
-    Input('update-graph-button1', 'n_clicks'),
-    Input('tabs', 'value'),],
+    Input('update-graph-button1', 'n_clicks')],
     state = [
+    State('tabs', 'value'),
     State('chr', 'value'),
     State('start', 'value'),
     State('stop', 'value')])
 
 def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, stop):
 
-    if tab == 'deconvolution':
+    fig = tools.make_subplots(rows=3, cols=1, specs=[[{}], [{}], [{}]],
+                              shared_xaxes=True, shared_yaxes=True,
+                              vertical_spacing=0.1)
 
-        fig = tools.make_subplots(rows=3, cols=1, specs=[[{}], [{}], [{}]],
-                                  shared_xaxes=True, shared_yaxes=True,
-                                  vertical_spacing=0.1)
+    sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
+    df = pd.read_csv(sgRNA_summary)
+    replicates = sorted([x for x in df.columns.tolist() if 'Log2FC_Replicate' in x])
 
-        sgRNA_summary = '/SURF/precomputed/%s/SURF_result/sgRNAs_summary_table_updated.csv' % (dataset)
-        df = pd.read_csv(sgRNA_summary)
-        replicates = sorted([x for x in df.columns.tolist() if 'Log2FC_Replicate' in x])
+    df = df.loc[df['sgRNA_Type'] != 'negative_control']
+    df = df.dropna(axis=0, how='any')
 
-        df = df.loc[df['sgRNA_Type'] != 'negative_control']
-        df = df.dropna(axis=0, how='any')
+    if chrom not in df['Chr'].unique():
+        unique_chr = [x for x in df['Chr'].unique()]
+        chrom = unique_chr[0]
 
-        if chrom is None:
-            unique_chr = [x for x in df['Chr'].unique()]
-            chrom = unique_chr[0]
+    df = df.loc[df['Chr'] == chrom]
 
-        df = df.loc[df['Chr'] == chrom]
+    # fig.append_trace(go.Scattergl(
+    #     x = np.random.randn(1000),
+    #     y = np.random.randn(1000),
+    #     mode = 'markers',
+    #     ), 1, 1)
 
-        for replicate in replicates:
 
-            fig.append_trace(go.Scatter(
-                x=df['Perturbation_Index'],
-                y=df[replicate],
-                text=replicate,
-                mode='markers',
-                opacity=0.5,
-                marker={
-                    'size': 6,
-                    'line': {'width': 0.3, 'color': 'white'}
-                },
-                name= replicate,
-                # yaxis = 'y1'
-            ), 1, 1)
+    for replicate in replicates:
 
-        beta_profile = '/SURF/precomputed/%s/SURF_result/beta_profile.csv' % (dataset)
-        df2 = pd.read_csv(beta_profile)
+        fig.append_trace(go.Scattergl(
+            x=df['Perturbation_Index'],
+            y=df[replicate],
+            text=replicate,
+            mode='markers',
+            opacity=0.5,
+            marker={
+                'size': 6,
+                'line': {'width': 0.3, 'color': 'white'}
+            },
+            name= replicate,
+            # yaxis = 'y1'
+        ), 1, 1)
 
-        # Filter for chrom
-        indices_filt = []
-        y_p_filt = []
-        power_filt = []
+    beta_profile = '/SURF/precomputed/%s/SURF_result/beta_profile.csv' % (dataset)
+    df2 = pd.read_csv(beta_profile)
 
-        for chrom_i, coord_i, value_i, power_i in zip(df2['Chr'], df2['Index'], df2['Beta'], df2['Statistical_Power']):
-            if chrom_i == chrom:
-                indices_filt.append(int(coord_i))
-                y_p_filt.append(float(value_i))
-                power_filt.append(float(power_i))
+    # Filter for chrom
+    indices_filt = []
+    y_p_filt = []
+    power_filt = []
 
-        # Boundaries of inference
-        parameters_json = '/SURF/precomputed/%s/%s.json' % (dataset, dataset)
+    for chrom_i, coord_i, value_i, power_i in zip(df2['Chr'], df2['Index'], df2['Beta'], df2['Statistical_Power']):
+        if chrom_i == chrom:
+            indices_filt.append(int(coord_i))
+            y_p_filt.append(float(value_i))
+            power_filt.append(float(power_i))
 
-        with open(parameters_json, 'r') as f:
-            json_string = f.readline().strip()
-            param_dict = json.loads(json_string)
+    # Boundaries of inference
+    parameters_json = '/SURF/precomputed/%s/%s.json' % (dataset, dataset)
 
-        scale_val = int(param_dict['scale'])
+    with open(parameters_json, 'r') as f:
+        json_string = f.readline().strip()
+        param_dict = json.loads(json_string)
 
-        diff_vec = [0] + list(np.diff(indices_filt))
+    scale_val = int(param_dict['scale'])
 
-        boundaries = [0]
-        for index, value in enumerate(diff_vec):
-            try:
-                if int(value) > int(scale_val):
-                    boundaries.append(index)
-            except:
-                pass
+    diff_vec = [0] + list(np.diff(indices_filt))
 
-        boundaries = sorted(boundaries)
-
-        boundaries.append(len(indices_filt))
-
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
-
-            fig.append_trace(go.Scatter(
-                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
-                y=[0] + power_filt[start_index:stop_index] + [0],
-                mode = 'lines',
-                fill='tozeroy',
-                showlegend=False,
-                # yaxis = 'y2',
-                line=dict(color='rgb(255,165,0)')), 2, 1)
-
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
-
-            fig.append_trace(go.Scatter(
-                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1], y=[0] + y_p_filt[start_index:stop_index] + [0],
-                mode = 'lines',
-                fill='tozeroy',
-                yaxis = 'y4',
-                showlegend=False,
-                line=dict(color='rgb(169,169,169)')), 3, 1)
-
-        # Find indices with significant padj-values
-        fdr = float(param_dict['fdr'])
-        significant_boundary_indices = []
-        padj_list = []
-        for padj in df2['Pval_adj.']:
-            try:
-                padj_list.append(float(padj))
-            except:
-                padj_list.append(0)
-
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
-            significant_indices = [1 if x < fdr else 0 for x in padj_list[start_index:stop_index]]
-            significant_boundary_indices_tmp = [j + start_index for j, k in enumerate(np.diff([0] + significant_indices)) if k != 0]
-
-            if len(significant_boundary_indices_tmp)%2 == 1:
-                significant_boundary_indices_tmp.append(stop_index - 1)
-
-            significant_boundary_indices += significant_boundary_indices_tmp
-
-        for i, j in zip(significant_boundary_indices[0::2], significant_boundary_indices[1::2]):
-
-            boundary_start = int(i)
-            boundary_stop = int(j)
-
-            genomic_boundary_start = int(df2['Index'][boundary_start])
-            genomic_boundary_stop = int(df2['Index'][boundary_stop])
-
-            signal_mean = np.mean(df2['Beta'][boundary_start:boundary_stop])
-
-            if signal_mean > np.median(df2['Beta']):
-                fig.append_trace(go.Scatter(
-                    x=[genomic_boundary_start, genomic_boundary_stop],
-                    y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
-                    mode = 'lines',
-                    # fill='tozeroy',
-                    showlegend=False,
-                    yaxis = 'y2',
-                    line=dict(color='rgb(255,0,0)', width = 5)), 3, 1)
-            else:
-                fig.append_trace(go.Scatter(
-                    x=[genomic_boundary_start, genomic_boundary_stop],
-                    y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
-                    mode = 'lines',
-                    # fill='tozeroy',
-                    showlegend=False,
-                    yaxis = 'y2',
-                    line=dict(color='rgb(30,144,255)', width = 5)), 3, 1)
-
+    boundaries = [0]
+    for index, value in enumerate(diff_vec):
         try:
-            start = int(start)
-            stop = int(stop)
-            fig['layout'].update(
-                height=800,
-                autosize = True,
-                xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
-                yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
-                yaxis2={'domain':[0.4, 0.6], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
-                yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
-                hovermode='closest',
-                title='Raw Scores and Deconvolution')
-
+            if int(value) > int(scale_val):
+                boundaries.append(index)
         except:
-            fig['layout'].update(
-                height=800,
-                autosize = True,
-                xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False},
-                yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
-                yaxis2={'domain':[0.4, 0.6], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
-                yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
-                hovermode='closest',
-                title='Raw Scores and Deconvolution')
+            pass
 
-        return fig
+    boundaries = sorted(boundaries)
+
+    boundaries.append(len(indices_filt))
+
+    for i in range(len(boundaries) - 1):
+        start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+        fig.append_trace(go.Scatter(
+            x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+            y=[0] + power_filt[start_index:stop_index] + [0],
+            mode = 'lines',
+            fill='tozeroy',
+            showlegend=False,
+            # yaxis = 'y2',
+            line=dict(color='rgb(255,165,0)')), 2, 1)
+
+    for i in range(len(boundaries) - 1):
+        start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+        fig.append_trace(go.Scatter(
+            x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1], y=[0] + y_p_filt[start_index:stop_index] + [0],
+            mode = 'lines',
+            fill='tozeroy',
+            yaxis = 'y4',
+            showlegend=False,
+            line=dict(color='rgb(169,169,169)')), 3, 1)
+
+    # Find indices with significant padj-values
+    fdr = float(param_dict['fdr'])
+    significant_boundary_indices = []
+    padj_list = []
+    for padj in df2['Pval_adj.']:
+        try:
+            padj_list.append(float(padj))
+        except:
+            padj_list.append(0)
+
+    for i in range(len(boundaries) - 1):
+        start_index, stop_index = boundaries[i], boundaries[i + 1]
+        significant_indices = [1 if x < fdr else 0 for x in padj_list[start_index:stop_index]]
+        significant_boundary_indices_tmp = [j + start_index for j, k in enumerate(np.diff([0] + significant_indices)) if k != 0]
+
+        if len(significant_boundary_indices_tmp)%2 == 1:
+            significant_boundary_indices_tmp.append(stop_index - 1)
+
+        significant_boundary_indices += significant_boundary_indices_tmp
+
+    for i, j in zip(significant_boundary_indices[0::2], significant_boundary_indices[1::2]):
+
+        boundary_start = int(i)
+        boundary_stop = int(j)
+
+        genomic_boundary_start = int(df2['Index'][boundary_start])
+        genomic_boundary_stop = int(df2['Index'][boundary_stop])
+
+        signal_mean = np.mean(df2['Beta'][boundary_start:boundary_stop])
+
+        if signal_mean > np.median(df2['Beta']):
+            fig.append_trace(go.Scatter(
+                x=[genomic_boundary_start, genomic_boundary_stop],
+                y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+                mode = 'lines',
+                # fill='tozeroy',
+                showlegend=False,
+                yaxis = 'y2',
+                line=dict(color='rgb(255,0,0)', width = 5)), 3, 1)
+        else:
+            fig.append_trace(go.Scatter(
+                x=[genomic_boundary_start, genomic_boundary_stop],
+                y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
+                mode = 'lines',
+                # fill='tozeroy',
+                showlegend=False,
+                yaxis = 'y2',
+                line=dict(color='rgb(30,144,255)', width = 5)), 3, 1)
+
+    try:
+        start = int(start)
+        stop = int(stop)
+        fig['layout'].update(
+            height=800,
+            autosize = True,
+            xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
+            yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
+            yaxis2={'domain':[0.4, 0.6], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+            yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
+            hovermode='closest',
+            title='Raw Scores and Deconvolution')
+
+    except:
+        fig['layout'].update(
+            height=800,
+            autosize = True,
+            xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False},
+            yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
+            yaxis2={'domain':[0.4, 0.6], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+            yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
+            hovermode='closest',
+            title='Raw Scores and Deconvolution')
+
+    return fig
 
 ### CALLBACKS FOR SIGNIFICANCE VIEW ###
 @app2.callback(Output('regions-table-view', 'rows'),
@@ -3193,6 +3143,20 @@ def update_output(dataset):
 
     df = df[['FDR','Chr','Start','Stop','Direction','Deconvolved_Signal_Area','Deconvolved_Signal_Mean','Padj_Mean','Supporting_sgRNAs']]
     return df.columns
+
+@app2.callback(
+    Output('download-total', 'href'),
+    [Input('dataset', 'value')])
+
+def update_link(dataset):
+
+    igv_sesh = '/SURF/precomputed/%s/SURF_result/igv_session.zip' % (dataset)
+    return igv_sesh
+
+@app2.server.route('/SURF/precomputed/<directory>/SURF_result/igv_session.zip')
+def generate_report_url2(directory):
+
+    return send_file('/SURF/precomputed/%s/SURF_result/igv_session.zip' % (directory), attachment_filename = 'igv_session.zip', as_attachment = True)
 
 def main():
     app.run_server(debug = True, processes = 5, port = 9992, host = '0.0.0.0')

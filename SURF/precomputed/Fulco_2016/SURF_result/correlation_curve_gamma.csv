@@ -27,5 +27,5 @@ Gamma,Corr_Avg,Corr_Avg_Scaled
 450.0,0.9049638206432451,0.9845664195850831
 500.0,0.9010951095997235,0.9803574082482299
 
-Correlation Ratio:,0.8
-Gamma Chosen:,30.0
+Correlation Ratio:,0.95
+Gamma Chosen:,60.0

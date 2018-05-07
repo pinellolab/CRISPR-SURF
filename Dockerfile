@@ -47,6 +47,6 @@ RUN mkdir /tmp/RESULTS_FOLDER
 
 # Reroute to enable the STREAM CLI and STREAM webapp
 WORKDIR /SURF
-EXPOSE 10001
+EXPOSE 9993
 #CMD ["bash", "start_server_docker.sh"]
 ENTRYPOINT ["/opt/conda/bin/python", "/SURF/crisprsurf_router.py"]

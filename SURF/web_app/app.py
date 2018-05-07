@@ -1085,7 +1085,7 @@ def download_file(contents, filename, n_clicks, pathname):
 
         if n_clicks > param_dict['example_data_clicks']:
 
-            sb.call('cp /SURF/exampleDataset/sgRNAs_summary_table.csv %s/sgRNAs_summary_table.csv' % (UPLOADS_FOLDER), shell = True)
+            sb.call('cp /SURF/web_app/exampleDataset/sgRNAs_summary_table.csv %s/sgRNAs_summary_table.csv' % (UPLOADS_FOLDER), shell = True)
 
             sgRNA_summary = UPLOADS_FOLDER + '/sgRNAs_summary_table.csv'
             df = pd.read_csv(sgRNA_summary)
@@ -1623,13 +1623,11 @@ def perform_deconvolution(n_clicks, range_val, scale_val, limit_val, gamma_list,
         data_dict['rapid'] = rapid
         data_dict['genome'] = genome
 
-        print 'SCALE VALUE %s' % scale_val
-
         with open(UPLOADS_FOLDER + '/data.json', 'w') as f:
             new_json_string = json.dumps(data_dict)
             f.write(new_json_string + '\n')
 
-        sb.Popen('python /SURF/SURF_deconvolution_webapp.py -uploads_dir %s -results_dir %s' % (UPLOADS_FOLDER, RESULTS_FOLDER), shell = True)
+        sb.Popen('python /SURF/web_app/SURF_deconvolution_webapp.py -uploads_dir %s -results_dir %s' % (UPLOADS_FOLDER, RESULTS_FOLDER), shell = True)
 
     return {'display': 'none'}
 
@@ -1669,7 +1667,6 @@ def update_container(n_clicks, deconvolution_container, pathname):
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-    print 'CUSTOM LOADING STATE'
     # hack
     json_good = False
     while not json_good:
@@ -1683,11 +1680,9 @@ def update_container(n_clicks, deconvolution_container, pathname):
 
     # First time analysis
     if n_clicks == param_dict['checkbutton1']:
-        print 'CUSTOM LOADING STATE PASS'
         return {'display': 'block'}
 
     else:
-        print 'CUSTOM LOADING FAIL'
         return {'display': 'none'}
 
 @app.callback(
@@ -1700,7 +1695,6 @@ def smoothing_container(fig_update, pathname):
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-    print 'DECONVOLUTION CONTAINER'
     # hack
     json_good = False
     while not json_good:
@@ -1713,11 +1707,9 @@ def smoothing_container(fig_update, pathname):
                 pass
 
     if param_dict['deconvolution-clicks'] > 0:
-        print 'DECONVOLUTION CONTAINER PASS'
         return {'display': 'block'}
 
     else:
-        print 'DECONVOLUTION CONTAINER FAIL'
         return {'display': 'none'}
 
 # @app.callback(
@@ -1748,7 +1740,6 @@ def update_container(n_clicks, deconvolution_container, pathname):
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-    print 'COMMON INTERVAL 1'
     # hack
     json_good = False
     while not json_good:
@@ -1762,11 +1753,9 @@ def update_container(n_clicks, deconvolution_container, pathname):
 
     # First time analysis
     if n_clicks == param_dict['checkbutton1']:
-        print 'COMMON INTERVAL 1 PASS'
         return 10000
 
     else:
-        print 'COMMON INTERVAL 1 FAIL'
         return 2000000000
 
 @app.callback(Output('replicate-correlation-show', 'children'),
@@ -1848,7 +1837,6 @@ def update_deconvolution_plot(update_graph_clicks, chrom_opt, avg, scale_val, ch
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-    print 'DECONVOLUTION PLOT'
     # hack
     json_good = False
     while not json_good:
@@ -1872,10 +1860,6 @@ def update_deconvolution_plot(update_graph_clicks, chrom_opt, avg, scale_val, ch
                 pass
 
     if os.path.exists(RESULTS_FOLDER + '/flag1.txt'):
-
-        print 'DECONVOLUTION PLOT PASS'
-
-        print 'PASS 1 -.-.--.--.---.-.-.-.-.-.-.---.-.-.-.-.-.-.-.-.-.'
 
         sb.call('rm %s/flag1.txt' % RESULTS_FOLDER, shell = True)
 
@@ -1994,8 +1978,6 @@ def update_deconvolution_plot(update_graph_clicks, chrom_opt, avg, scale_val, ch
         return fig
 
     elif (update_graph_clicks > 0) and (loading_style == {'display': 'none'}):
-
-        print 'PASS 2 -.-.--.--.---.-.-.-.-.-.-.---.-.-.-.-.-.-.-.-.-.'
 
         fig = tools.make_subplots(rows=2, cols=1, specs=[[{}], [{}]],
                                   shared_xaxes=True, shared_yaxes=True,
@@ -2124,8 +2106,6 @@ def update_deconvolution_plot(update_graph_clicks, chrom_opt, avg, scale_val, ch
 
         return fig
 
-    print 'DECONVOLUTION PLOT FAIL'
-
 ### CALLBACKS FOR SIGNIFICANCE ###
 @app.callback(
     Output('time-estimate', 'children'),
@@ -2197,7 +2177,7 @@ def find_regions(n_clicks, pathname): #n_clicks, pert_range, scale, limit, gamma
         UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
         RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-        sb.Popen('python /SURF/SURF_significance_webapp.py -uploads_dir %s -results_dir %s' % (UPLOADS_FOLDER, RESULTS_FOLDER), shell = True)
+        sb.Popen('python /SURF/web_app/SURF_significance_webapp.py -uploads_dir %s -results_dir %s' % (UPLOADS_FOLDER, RESULTS_FOLDER), shell = True)
 
     return {'display': 'none'}
 
@@ -2212,7 +2192,6 @@ def update_container(n_clicks, significance_container, pathname):
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-    print 'CUSTOM LOADING STATE 2'
     # hack
     json_good = False
     while not json_good:
@@ -2226,11 +2205,9 @@ def update_container(n_clicks, significance_container, pathname):
 
     # First time analysis
     if n_clicks == param_dict['checkbutton2']:
-        print 'CUSTOM LOADING STATE 2 PASS'
         return {'display': 'block'}
 
     else:
-        print 'CUSTOM LOADING STATE 2 FAIL'
         return {'display': 'none'}
 
 @app.callback(
@@ -2243,7 +2220,6 @@ def significance_container(fig_update, pathname):
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-    print 'SIGNIFICANCE CONTAINER'
     # hack
     json_good = False
     while not json_good:
@@ -2256,11 +2232,9 @@ def significance_container(fig_update, pathname):
                 pass
 
     if param_dict['significance-clicks'] > 0:
-        print 'SIGNIFICANCE CONTAINER PASS'
         return {'display': 'block'}
 
     else:
-        print 'SIGNIFICANCE CONTAINER FAIL'
         return {'display': 'none'}
 
 @app.callback(
@@ -2274,7 +2248,6 @@ def update_container(n_clicks, significance_container, pathname):
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-    print 'COMMON INTERVAL 2'
     # hack
     json_good = False
     while not json_good:
@@ -2288,11 +2261,9 @@ def update_container(n_clicks, significance_container, pathname):
 
     # First time analysis
     if n_clicks == param_dict['checkbutton2']:
-        print 'COMMON INTERVAL 2 PASS'
         return 10000
 
     else:
-        print 'COMMON INTERVAL 2 FAIL'
         return 2000000000
 
 @app.callback(Output('fdr-show', 'children'),
@@ -2365,7 +2336,6 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-    print 'SIGNIFICANCE PLOT'
     # hack
     json_good = False
     while not json_good:
@@ -2389,10 +2359,6 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                 pass
 
     if os.path.exists(RESULTS_FOLDER + '/flag2.txt'):
-
-        print 'SIGNIFICANCE PLOT PASS'
-
-        print 'PASS 1 -.-.--.--.---.-.-.-.-.-.-.---.-.-.-.-.-.-.-.-.-.'
 
         sb.call('rm %s/flag2.txt' % RESULTS_FOLDER, shell = True)
 
@@ -2518,8 +2484,6 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
         return fig
 
     elif (update_graph_clicks > 0) and (loading_style == {'display': 'none'}):
-
-        print 'PASS 2 -.-.--.--.---.-.-.-.-.-.-.---.-.-.-.-.-.-.-.-.-.'
 
         fig = tools.make_subplots(rows=2, cols=1, specs=[[{}], [{}]],
                                   shared_xaxes=True, shared_yaxes=True,
@@ -2654,9 +2618,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
             f.write(new_json_string + '\n')
 
         return fig
-
-    print 'SIGNIFICANCE PLOT FAIL'
-
+        
 ### CALLBACKS FOR DOWNLOAD ###
 @app.callback(
     Output('download-total', 'href'),
@@ -2698,7 +2660,7 @@ def generate_report_url(directory):
     RESULTS_FOLDER = '/tmp/RESULTS_FOLDER/%s' % directory
     UPLOADS_FOLDER = '/tmp/UPLOADS_FOLDER/%s' % directory
 
-    proc = sb.Popen('python /SURF/SURF_download_webapp.py -uploads_dir %s -results_dir %s' % (UPLOADS_FOLDER, RESULTS_FOLDER), shell = True)
+    proc = sb.Popen('python /SURF/web_app/SURF_download_webapp.py -uploads_dir %s -results_dir %s' % (UPLOADS_FOLDER, RESULTS_FOLDER), shell = True)
     proc.wait()
 
     if os.path.exists('%s/%s' % (RESULTS_FOLDER, overview_folder)):

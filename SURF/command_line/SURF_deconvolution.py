@@ -159,14 +159,14 @@ else:
 logger.info('Finished argument handling and setting defaults when necessary ...')
 
 ##### Check if sgRNA summary csv exists, load dataframe and make sure formatting is correct
-# try:
-df = pd.read_csv(sgRNA_summary_file)
-required_columns = ['Chr', 'Start', 'Stop', 'Perturbation_Index', 'sgRNA_Sequence', 'Strand', 'sgRNA_Type', 'Log2FC_Replicate1']
-df_columns = df.columns.tolist()
+try:
+	df = pd.read_csv(sgRNA_summary_file)
+	required_columns = ['Chr', 'Start', 'Stop', 'Perturbation_Index', 'sgRNA_Sequence', 'Strand', 'sgRNA_Type', 'Log2FC_Replicate1']
+	df_columns = df.columns.tolist()
 
-# except:
-# 	logger.error('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNA_summary_file)
-# 	sys.exit('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNA_summary_file)
+except:
+	logger.error('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNA_summary_file)
+	sys.exit('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNA_summary_file)
 
 if '.csv' not in sgRNA_summary_file:
 	logger.error('Please make sure input sgRNA summary file is in .CSV format ...')
@@ -187,30 +187,30 @@ perturbation_profile = gaussian_pattern(characteristic_perturbation_range = char
 logger.info('Deconvolving CRISPR tiling screen signal for biological replicates ...')
 gammas2betas = {}
 
-# try:
-sgRNA_indices = [int(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Perturbation_Index']).flatten().tolist()]
-chromosomes = [str(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Chr']).flatten().tolist()]
+try:
+	sgRNA_indices = [int(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Perturbation_Index']).flatten().tolist()]
+	chromosomes = [str(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Chr']).flatten().tolist()]
 
-# except:
-# 	logger.error('Please make sure all values in column Perturbation_Index are numbers for sgRNAs that are NOT classified as negative controls ...')
-# 	sys.exit('Please make sure all values in column Perturbation_Index are numbers for sgRNAs that are NOT classified as negative controls ...')
+except:
+	logger.error('Please make sure all values in column Perturbation_Index are numbers for sgRNAs that are NOT classified as negative controls ...')
+	sys.exit('Please make sure all values in column Perturbation_Index are numbers for sgRNAs that are NOT classified as negative controls ...')
 
 for i in range(1, replicates + 1):
 	logger.info('Deconvolving signal for Replicate %s' % str(i))
 
-	# try:
-	observations = [float(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Log2FC_Replicate' + str(i)]).flatten().tolist()]
+	try:
+		observations = [float(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Log2FC_Replicate' + str(i)]).flatten().tolist()]
 
-	# except:
-	# 	logger.error('Please make sure all values in column Log2FC_Replicate%s are numbers ...' % str(i))
-	# 	sys.exit('Please make sure all values in column Log2FC_Replicate%s are numbers ...' % str(i))
+	except:
+		logger.error('Please make sure all values in column Log2FC_Replicate%s are numbers ...' % str(i))
+		sys.exit('Please make sure all values in column Log2FC_Replicate%s are numbers ...' % str(i))
 
-	# try:
-	gammas2betas[i], guideindices2bin = crispr_surf_deconvolution(observations = observations, chromosomes = chromosomes, sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = gamma_list, scale = scale)
+	try:
+		gammas2betas[i], guideindices2bin = crispr_surf_deconvolution(observations = observations, chromosomes = chromosomes, sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = gamma_list, scale = scale)
 		
-	# except:
-	# 	logger.error('Deconvolution of Replicate %s was not successful. The scale parameter may need to be adjusted ...' % str(i))
-	# 	sys.exit('Deconvolution of Replicate %s was not successful. The scale parameter may need to be adjusted ...' % str(i))
+	except:
+		logger.error('Deconvolution of Replicate %s was not successful. The scale parameter may need to be adjusted ...' % str(i))
+		sys.exit('Deconvolution of Replicate %s was not successful. The scale parameter may need to be adjusted ...' % str(i))
 
 logger.info('Successfully deconvolved all biological replicates ...')
 
@@ -219,67 +219,67 @@ if len(gamma_list) == 1:
 	gamma_use = gamma_list[0]
 
 else:
-	# try:
-	(gamma_range, gamma_use) = crispr_surf_find_gamma(gammas2betas = gammas2betas, correlation_ratio_start = correlation_ratio, correlation_ratio_stop = correlation_ratio, correlation_ratio_opt = correlation_ratio, out_dir = out_dir)
-	logger.info('Identified gamma range to be used for downstream deconvolution statistics')
+	try:
+		(gamma_range, gamma_use) = crispr_surf_find_gamma(gammas2betas = gammas2betas, correlation_ratio_start = correlation_ratio, correlation_ratio_stop = correlation_ratio, correlation_ratio_opt = correlation_ratio, out_dir = out_dir)
+		logger.info('Identified gamma range to be used for downstream deconvolution statistics')
 
-	# except:
-	# 	logger.error('Failed to identify gamma range ...')
-	# 	sys.exit('Failed to identify gamma range ...')
+	except:
+		logger.error('Failed to identify gamma range ...')
+		sys.exit('Failed to identify gamma range ...')
 
 ##### Combine biological replicate deconvolved signals
-# try:
-gammas2betas_updated = crispr_surf_deconvolved_signal(gammas2betas = gammas2betas, gamma_chosen = gamma_use, averaging_method = averaging_method, out_dir = out_dir)
-logger.info('Combined all biological replicates into single deconvolution profile for downstream statistics ...')
+try:
+	gammas2betas_updated = crispr_surf_deconvolved_signal(gammas2betas = gammas2betas, gamma_chosen = gamma_use, averaging_method = averaging_method, out_dir = out_dir)
+	logger.info('Combined all biological replicates into single deconvolution profile for downstream statistics ...')
 
-# except:
-# 	logger.error('Combined all biological replicates into single deconvolution profile for downstream statistics ...')
-# 	sys.exit('Combined all biological replicates into single deconvolution profile for downstream statistics ...')
+except:
+	logger.error('Combined all biological replicates into single deconvolution profile for downstream statistics ...')
+	sys.exit('Combined all biological replicates into single deconvolution profile for downstream statistics ...')
 
 ##### Bootstrap deconvolution analysis to assign statistical significance
-# try:
-gammas2betas_updated, replicate_parameters = crispr_surf_statistical_significance(sgRNA_summary_table = sgRNA_summary_file, sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gammas2betas = gammas2betas_updated, simulation_type = simulation_type, simulation_n = simulation_n, guideindices2bin = guideindices2bin, averaging_method = averaging_method, padj_cutoffs = padj_cutoffs, effect_size = effect_size, limit = limit, scale = scale, rapid_mode = rapid_mode)
-logger.info('Finished simulations to assess statistical significance of deconvolution profile ...')
+try:
+	gammas2betas_updated, replicate_parameters = crispr_surf_statistical_significance(sgRNA_summary_table = sgRNA_summary_file, sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gammas2betas = gammas2betas_updated, simulation_type = simulation_type, simulation_n = simulation_n, guideindices2bin = guideindices2bin, averaging_method = averaging_method, padj_cutoffs = padj_cutoffs, effect_size = effect_size, limit = limit, scale = scale, rapid_mode = rapid_mode)
+	logger.info('Finished simulations to assess statistical significance of deconvolution profile ...')
 
-# except:
-# 	logger.error('Simulations for statistical significance failed ...')
-# 	sys.exit('Simulations for statistical significance failed ...')
+except:
+	logger.error('Simulations for statistical significance failed ...')
+	sys.exit('Simulations for statistical significance failed ...')
 
 ##### Update sgRNA summary file
-# try:
-crispr_surf_sgRNA_summary_table_update(sgRNA_summary_table = sgRNA_summary_file, gammas2betas = gammas2betas_updated, averaging_method = averaging_method, scale = scale, guideindices2bin = guideindices2bin, simulation_n = simulation_n, padj_cutoffs = padj_cutoffs, out_dir = out_dir)
-logger.info('Successfully updated sgRNA summary table ...')
+try:
+	crispr_surf_sgRNA_summary_table_update(sgRNA_summary_table = sgRNA_summary_file, gammas2betas = gammas2betas_updated, averaging_method = averaging_method, scale = scale, guideindices2bin = guideindices2bin, simulation_n = simulation_n, padj_cutoffs = padj_cutoffs, out_dir = out_dir)
+	logger.info('Successfully updated sgRNA summary table ...')
 
-# except:
-# 	logger.error('Failed to update sgRNA summary table ...')
-# 	sys.exit('Failed to update sgRNA summary table ...')
+except:
+	logger.error('Failed to update sgRNA summary table ...')
+	sys.exit('Failed to update sgRNA summary table ...')
 
 ##### Output beta profile
-# try:
-complete_beta_profile(gammas2betas = gammas2betas_updated, simulation_n = simulation_n, padj_cutoffs = padj_cutoffs, out_dir = out_dir)
-logger.info('Successfully created beta profile file ...')
+try:
+	complete_beta_profile(gammas2betas = gammas2betas_updated, simulation_n = simulation_n, padj_cutoffs = padj_cutoffs, out_dir = out_dir)
+	logger.info('Successfully created beta profile file ...')
 
-# except:
-# 	logger.error('Failed to create beta profile file ...')
-# 	sys.exit('Failed to create beta profile file ...')
+except:
+	logger.error('Failed to create beta profile file ...')
+	sys.exit('Failed to create beta profile file ...')
 
 ##### Output significant regions file
-# try:
-crispr_surf_significant_regions(sgRNA_summary_table = sgRNA_summary_file.replace('.csv', '_updated.csv'), gammas2betas = gammas2betas_updated, padj_cutoffs = padj_cutoffs, scale = scale, guideindices2bin = guideindices2bin, out_dir = out_dir)
-logger.info('Successfully created significant regions file ...')
+try:
+	crispr_surf_significant_regions(sgRNA_summary_table = sgRNA_summary_file.replace('.csv', '_updated.csv'), gammas2betas = gammas2betas_updated, padj_cutoffs = padj_cutoffs, scale = scale, guideindices2bin = guideindices2bin, out_dir = out_dir)
+	logger.info('Successfully created significant regions file ...')
 
-# except:
-# 	logger.error('Failed to create significant regions file ...')
-# 	sys.exit('Failed to create significant regions file ...')
+except:
+	logger.error('Failed to create significant regions file ...')
+	sys.exit('Failed to create significant regions file ...')
 
 ##### Output IGV tracks
-# try:
-crispr_surf_IGV(sgRNA_summary_table = sgRNA_summary_file.replace('.csv', '_updated.csv'), gammas2betas = gammas2betas_updated, padj_cutoffs = padj_cutoffs, genome = genome, scale = scale, guideindices2bin = guideindices2bin, out_dir = out_dir)
-logger.info('Successfully created IGV tracks ...')
+try:
+	crispr_surf_IGV(sgRNA_summary_table = sgRNA_summary_file.replace('.csv', '_updated.csv'), gammas2betas = gammas2betas_updated, padj_cutoffs = padj_cutoffs, genome = genome, scale = scale, guideindices2bin = guideindices2bin, out_dir = out_dir)
+	logger.info('Successfully created IGV tracks ...')
 
-# except:
-# 	logger.error('Failed to create IGV tracks ...')
-# 	sys.exit('Failed to create IGV tracks ...')
+except:
+	logger.error('Failed to create IGV tracks ...')
+	sys.exit('Failed to create IGV tracks ...')
 
 ##### Write parameters file
 parameters = {

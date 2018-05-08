@@ -15,7 +15,46 @@ To get a local copy of CRISPR-SURF, simply execute the following command:
 
 ## CRISPR-SURF Count
 
-The CRISPR-SURF Count script generates a required input file, the sgRNA summary file, for both the CRISPR-SURF interactive website and command-line interface. You will need one of the following:
+The CRISPR-SURF Count script generates a required input file, the sgRNA summary file, for both the CRISPR-SURF interactive website and command-line interface. Below is an overview of how to run CRISPR-SURF Count:
+
+* start a terminal session;
+* ```docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count [options]```
+
+Users can specify the following options:
+```
+-f, --sgRNA_library  
+      Input sgRNA library file. Formatting specified below. (Default: None)
+-control_fastqs, --control_fastqs
+      List of control FASTQs with sgRNA counts prior to selection. Example: rep1_control.fastq rep2_control.fastq rep3_control.fastq (Default: None)
+-sample_fastqs, --sample_fastqs
+      List of sample FASTQs with sgRNA counts following selection. Example: rep1_sample.fastq rep2_sample.fastq rep3_sample.fastq (Default: None)
+-nuclease, --nuclease
+      Nuclease used in the CRISPR tiling screen experiment. This information is used to determine the cleavage index if indels are specified as the perturbation. (cas9, cpf1 | Default: cas9)
+-pert, --perturbation
+      Perturbation type used in the CRISPR tiling screen experiment. This information is used to determine the perturbation index for a given sgRNA. (indel, crispri, crispra | Default: indel)
+-norm, --normalization
+      Normalization method between sequencing libraries. (none, median, total | Default: median)
+-count_method, --count_method
+      Counting method for sgRNA counting from FASTQ. The tracrRNA option aligns a consensus sequence directly downstream of the sgRNA. The index option uses provided indices to grab sgRNA sequence from read. (tracrRNA, index | Default: tracrRNA)
+-tracrRNA, --tracrRNA
+      If -count_method == tracrRNA. The consensus tracrRNA sequence directly downstream of the sgRNA for counting from FASTQ. (Default: GTTTTAG)
+-sgRNA_index, --sgRNA_index
+      If -count_method == index. The sgRNA start and stop indices (0-index) within the FASTQ reads. Example: 0 20 (Default: 0 20)
+-count_min, --count_minimum
+      The minimum number of counts for a given sgRNA in each control sample. (Default: 50)
+-dropout, --dropout_penalty
+      The dropout penalty removes sgRNAs that have a 0 count in any of the control/sample replicates. (Default: True)
+-TTTT, --TTTT_penalty
+      The TTTT penalty removes sgRNAs that have a homopolymer stretch of Ts >= 4. (Default: True)
+-sgRNA_length, --sgRNA_length
+      Length of sgRNAs used in the CRISPR tiling screen experiment. This must match the sgRNA length provided in the sgRNA library file. (Default: 20)
+-reverse, --reverse_score
+      Reverse the enrichment score. Generally applied to depletion screens where a positive score is associated with depletion of a sgRNA. (Default: False)
+-out_dir, --out_directory
+      The output directory for CRISPR-SURF counts. (Default: .)
+```
+
+To start, you will need one of the following:
 
 * **Option (1)** sgRNA Library File with FASTQs
 * **Option (2)** sgRNA Library File with counts

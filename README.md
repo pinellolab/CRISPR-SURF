@@ -215,3 +215,24 @@ docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf 
 ```
 
 Simply change ```-pert cas9``` to ```-pert crispri``` or ```-pert crispra``` for CRISPRi and CRISPRa screens, respectively.
+
+## Output Files
+
+**sgRNAs_summary_table_updated.csv:** An updated sgRNAs summary table with deconvolution and p-adj. values.
+
+**igv_session.xml:** An IGV session for the following tracks
+* **raw_scores.bedgraph** - sgRNA enrichment scores
+* **deconvolved_scores.bedgraph** - deconvolution beta profile
+* **positive_significant_regions.bed** - positive significant regions at set FDR
+* **negative_significant_regions.bed** - negative significant regions at set FDR
+* **statistical_power.bedgraph** - statistical power track at set effect size and FDR
+
+**significant_regions.csv:** List of the significant regions and its associated statistics and supporting sgRNAs.
+
+**beta_profile.csv:** Full deconvolution beta profile with associated statistics.
+
+**correlation_curve_gamma.csv:** The correlation curve generated for determining gamma.
+
+**crispr-surf_parameters.csv:** The CRISPR-SURF analysis parameters used during the analysis session.
+
+**crispr-surf.log:** The log file for CRISPR-SURF analysis.

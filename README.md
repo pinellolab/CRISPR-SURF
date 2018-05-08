@@ -95,6 +95,8 @@ Place the sgRNA library file and FASTQs in the same directory. The control FASTQ
 docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count -f sgRNA_library_file.csv -control_fastqs rep1_control.fastq rep2_control.fastq -sample_fastqs rep1_sample.fastq rep2_sample.fastq -nuclease cas9 -pert indel
 ```
 
+Simply change ```-pert indel``` to ```-pert crispri``` or ```-pert crispra``` for CRISPRi and CRISPRa screens, respectively.
+
 **IMPORTANT:** The number of control FASTQs must equal the number of sample FASTQs. If a single control FASTQ (i.e. plasmid count) is used for multiple sample FASTQs, just enumerate the ```-control_fastqs``` option with the same single control FASTQ.
 
 **Option (2)**:
@@ -136,6 +138,8 @@ Go into the directory where the sgRNA library file is located. Assuming the sgRN
 ``` 
 docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count -f sgRNA_library_file_w_counts.csv -nuclease cas9 -pert indel
 ```
+
+Simply change ```-pert indel``` to ```-pert crispri``` or ```-pert crispra``` for CRISPRi and CRISPRa screens, respectively.
 
 **IMPORTANT:** Additional ReplicateN_Control_Count and ReplicateN_Sample_Count columns can be added depending on the number of replicates used in the experiment. The number of ReplicateN_Control_Count columns must equal ReplicateN_Sample_Count columns. If a single control column (i.e. plasmid count) is used for multiple sample counts, just duplicate the single control column with the appropriate column names.
 
@@ -204,8 +208,10 @@ docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf 
 
 **Run CRISPR-SURF Command-Line Interface (2) Yourself**
 
-Go into the directory where the sgRNAs summary table is located. Assuming the sgRNAs summary table is named                   ```sgRNAs_summary_table.csv``` and it's CRISPR-Cas9 tiling screen, the command-line call would look like:
+Go into the directory where the sgRNAs summary table is located. Assuming the sgRNAs summary table is named                   ```sgRNAs_summary_table.csv``` and it's a CRISPR-Cas9 tiling screen, the command-line call would look like:
 
 ```
 docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_deconvolution -f sgRNAs_summary_table.csv -pert cas9
 ```
+
+Simply change ```-pert cas9``` to ```-pert crispri``` or ```-pert crispra``` for CRISPRi and CRISPRa screens, respectively.

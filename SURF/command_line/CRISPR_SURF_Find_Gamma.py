@@ -3,7 +3,7 @@ import itertools
 import pandas as pd
 import scipy as sp
 
-def crispr_surf_find_gamma(gammas2betas, correlation_ratio_start, correlation_ratio_stop, correlation_ratio_opt, out_dir):
+def crispr_surf_find_gamma(gammas2betas, correlation_start, correlation_stop, correlation_opt, out_dir):
 
 	"""
 	Function to find optimal gamma range to be used for regularization based on empirical simulations.
@@ -44,9 +44,9 @@ def crispr_surf_find_gamma(gammas2betas, correlation_ratio_start, correlation_ra
 	correlation_curve_rescaled_capped = correlation_curve_rescaled[:max_index + 1]
 
 	# Return optimal gamma range
-	gamma_index_start = min(range(len(correlation_curve_rescaled_capped)), key=lambda i: abs(correlation_curve_rescaled_capped[i] - float(correlation_ratio_start)))
-	gamma_index_stop = min(range(len(correlation_curve_rescaled_capped)), key=lambda i: abs(correlation_curve_rescaled_capped[i] - float(correlation_ratio_stop)))
-	gamma_index_opt = min(range(len(correlation_curve_rescaled_capped)), key=lambda i: abs(correlation_curve_rescaled_capped[i] - float(correlation_ratio_opt)))
+	gamma_index_start = min(range(len(correlation_curve_rescaled_capped)), key=lambda i: abs(correlation_curve_rescaled_capped[i] - float(correlation_start)))
+	gamma_index_stop = min(range(len(correlation_curve_rescaled_capped)), key=lambda i: abs(correlation_curve_rescaled_capped[i] - float(correlation_stop)))
+	gamma_index_opt = min(range(len(correlation_curve_rescaled_capped)), key=lambda i: abs(correlation_curve_rescaled_capped[i] - float(correlation_opt)))
 
 	gamma_range = [x for x in zip(gamma_list[gamma_index_start:], correlation_curve_rescaled_capped[gamma_index_start:])]
 
@@ -61,7 +61,7 @@ def crispr_surf_find_gamma(gammas2betas, correlation_ratio_start, correlation_ra
 			f.write(','.join(map(str, i)) + '\n')
 
 		f.write('\n')
-		f.write('Correlation Ratio:,%s' % correlation_ratio_opt + '\n')
+		f.write('Correlation Ratio:,%s' % correlation_opt + '\n')
 		f.write('Gamma Chosen:,%s' % gamma_opt + '\n')
 
 	return gamma_range, gamma_opt

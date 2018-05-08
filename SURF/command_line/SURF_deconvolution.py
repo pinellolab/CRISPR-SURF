@@ -22,17 +22,17 @@ timestr = time.strftime("%Y-%m-%d_%H.%M.%S")
 
 ##### Argument handeling
 parser = argparse.ArgumentParser(description = 'CRISPR-SURF command line tool to analyze CRISPR tiling screen data across various screening modalities.')
-parser.add_argument('-f', '--sgRNA_summary_file', type = str, required = True, help = 'Input sgRNA summary file with the following required columns: Chr, Start, Stop, Perturbation_Index, sgRNA_Sequence, Strand, sgRNA_Type, Log2FC_Replicate1. Use crisprsurf_counts_CL.py to generate this sgRNA summary file from FASTQs.')
+parser.add_argument('-f', '--sgRNAs_summary_table', type = str, required = True, help = 'Input sgRNA summary file with the following required columns: Chr, Start, Stop, Perturbation_Index, sgRNA_Sequence, Strand, sgRNA_Type, Log2FC_Replicate1. Use crisprsurf_counts_CL.py to generate this sgRNA summary file from FASTQs.')
 parser.add_argument('-pert', '--perturbation_type', type = str, choices = ['be', 'cas9', 'cpf1', 'crispri', 'crispra'], required = True, help = 'Perturbation type used (cas9, cpf1, crispri, crispra, be).')
 parser.add_argument('-range', '--characteristic_perturbation_range', type = int, default = 0, help = 'Characteristic perturbation length. If 0 (default), the --perturbation_type argument will be used to set an appropriate perturbation range.')
 parser.add_argument('-scale', '--scale', type = int, default = 0, help = 'Scaling factor to efficiently perform deconvolution with negligible consequences. If 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate scaling factor.')
-parser.add_argument('-limit', '--limit', type = int, default = 0, help = 'Maximum distance between two sgRNAs to perform inference on bp in-between. Sets the boundaries of the gaussian profile to perform efficient deconvolution.')
+parser.add_argument('-limit', '--limit', type = int, default = 0, help = 'Maximum distance between two sgRNAs to perform inference on bp in-between. Sets the boundaries of the gaussian profile to perform efficient deconvolution. If 0 (default), the --perturbation_type argument will be used to set an appropriate limit.')
 parser.add_argument('-avg', '--averaging_method', type = str, default = 'median', choices = ['mean', 'median'], help = 'The averaging method to be performed to combine biological replicates (mean, median).')
 parser.add_argument('-sim_type', '--simulation_type', type = str, default = 'gaussian', choices = ['negative_control', 'gaussian', 'laplace'], help = 'The method of building a null distribution for each smoothed beta score (negative_control, gaussian, laplace).')
 parser.add_argument('-sim_n', '--simulation_n', type = int, default = 1000, help = 'The number of simulations to perform for construction of the null distribution.')
 parser.add_argument('-gamma_list', '--gamma_list', default = 0, nargs = '+', help = 'List of gammas (regularization parameter) to use during deconvolution step. If 0 (default), the --perturbation_type argument will be used to set a reasonable gamma list. Example: 1,2,3,4,5,6,7,8,9,10')
 parser.add_argument('-gamma', '--gamma', type = float, default = 0, help = 'The gamma to use to use during deconvolution step. If 0 (default), the --gamma_list argument will be used.')
-parser.add_argument('-corr_ratio', '--correlation_ratio', type = float, default = 0.8, help = 'The correlation ratio to use between biological replicates to determine a reasonable gamma for the deconvolution operation.')
+parser.add_argument('-corr', '--correlation', type = float, default = 0, help = 'The correlation between biological replicates to determine a reasonable gamma for the deconvolution operation. if 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate correlation.')
 parser.add_argument('-genome', '--genome', type = str, default = 'hg19', help = 'The genome to be used to create the IGV session file (hg19, hg38, mm9, mm10, etc.).')
 parser.add_argument('-effect_size', '--effect_size', type = float, default = 1, help = 'Effect size to estimate statistical power.')
 parser.add_argument('-padjs', '--padj_cutoffs', default = 0, nargs = '+', help = 'List of p-adj. (Benjamini-Hochberg) cut-offs for determining significance of regulatory regions in the CRISPR tiling screen.')
@@ -41,7 +41,7 @@ parser.add_argument('-out_dir', '--out_directory', type = str, default = 'CRISPR
 args = parser.parse_args()
 
 ##### Initialize arguments
-sgRNA_summary_file = args.sgRNA_summary_file
+sgRNAs_summary_table = args.sgRNAs_summary_table
 perturbation_type = args.perturbation_type
 characteristic_perturbation_range = args.characteristic_perturbation_range
 scale = args.scale
@@ -51,7 +51,7 @@ simulation_type = args.simulation_type
 simulation_n = args.simulation_n
 gamma_list = args.gamma_list
 gamma = args.gamma
-correlation_ratio = args.correlation_ratio
+correlation = args.correlation
 genome = args.genome
 padj_cutoffs = args.padj_cutoffs
 effect_size = args.effect_size
@@ -120,8 +120,8 @@ if scale == 0:
 
 if padj_cutoffs == 0:
 	padj_cutoffs = [0.05]
-	logger.info('The p adj. cut-off list is set to %s ...' % padj_cutoffs)
-
+	logger.info('The following p adj. values will be used %s ...' % padj_cutoffs)
+	
 else:
 	try:
 		padj_cutoffs = sorted([float(x) for x in padj_cutoffs])
@@ -129,6 +129,16 @@ else:
 	except:
 		logger.error('The p adj. argument input could not be converted into a list. Example: 0.01 0.05 0.1 0.25 ...')
 		sys.exit('The p adj. argument input could not be converted into a list of floats. Example: 0.01 0.05 0.1 0.25 ...')
+
+# Setting default for correlation parameter
+if correlation == 0:
+	if characteristic_perturbation_range <= 50:
+		correlation = 0.8
+		logger.info('The correlation parameter is set to %s ...' % correlation)
+
+	else:
+		correlation = 0.9
+		logger.info('The correlation parameter is set to %s ...' % correlation)
 
 # Setting default gamma list parameter
 if gamma == 0:
@@ -159,16 +169,16 @@ else:
 logger.info('Finished argument handling and setting defaults when necessary ...')
 
 ##### Check if sgRNA summary csv exists, load dataframe and make sure formatting is correct
-# try:
-df = pd.read_csv(sgRNA_summary_file)
-required_columns = ['Chr', 'Start', 'Stop', 'Perturbation_Index', 'sgRNA_Sequence', 'Strand', 'sgRNA_Type', 'Log2FC_Replicate1']
-df_columns = df.columns.tolist()
+try:
+	df = pd.read_csv(sgRNAs_summary_table)
+	required_columns = ['Chr', 'Start', 'Stop', 'Perturbation_Index', 'sgRNA_Sequence', 'Strand', 'sgRNA_Type', 'Log2FC_Replicate1']
+	df_columns = df.columns.tolist()
 
-# except:
-# 	logger.error('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNA_summary_file)
-# 	sys.exit('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNA_summary_file)
+except:
+	logger.error('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNAs_summary_table)
+	sys.exit('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNAs_summary_table)
 
-if '.csv' not in sgRNA_summary_file:
+if '.csv' not in sgRNAs_summary_table:
 	logger.error('Please make sure input sgRNA summary file is in .CSV format ...')
 	sys.exit('Please make sure input sgRNA summary file is in .CSV format ...')
 
@@ -220,7 +230,7 @@ if len(gamma_list) == 1:
 
 else:
 	try:
-		(gamma_range, gamma_use) = crispr_surf_find_gamma(gammas2betas = gammas2betas, correlation_ratio_start = correlation_ratio, correlation_ratio_stop = correlation_ratio, correlation_ratio_opt = correlation_ratio, out_dir = out_dir)
+		(gamma_range, gamma_use) = crispr_surf_find_gamma(gammas2betas = gammas2betas, correlation_start = correlation, correlation_stop = correlation, correlation_opt = correlation, out_dir = out_dir)
 		logger.info('Identified gamma range to be used for downstream deconvolution statistics')
 
 	except:
@@ -238,7 +248,7 @@ except:
 
 ##### Bootstrap deconvolution analysis to assign statistical significance
 try:
-	gammas2betas_updated, replicate_parameters = crispr_surf_statistical_significance(sgRNA_summary_table = sgRNA_summary_file, sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gammas2betas = gammas2betas_updated, simulation_type = simulation_type, simulation_n = simulation_n, guideindices2bin = guideindices2bin, averaging_method = averaging_method, padj_cutoffs = padj_cutoffs, effect_size = effect_size, limit = limit, scale = scale, rapid_mode = rapid_mode)
+	gammas2betas_updated, replicate_parameters = crispr_surf_statistical_significance(sgRNA_summary_table = sgRNAs_summary_table, sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gammas2betas = gammas2betas_updated, simulation_type = simulation_type, simulation_n = simulation_n, guideindices2bin = guideindices2bin, averaging_method = averaging_method, padj_cutoffs = padj_cutoffs, effect_size = effect_size, limit = limit, scale = scale, rapid_mode = rapid_mode)
 	logger.info('Finished simulations to assess statistical significance of deconvolution profile ...')
 
 except:
@@ -247,7 +257,7 @@ except:
 
 ##### Update sgRNA summary file
 try:
-	crispr_surf_sgRNA_summary_table_update(sgRNA_summary_table = sgRNA_summary_file, gammas2betas = gammas2betas_updated, averaging_method = averaging_method, scale = scale, guideindices2bin = guideindices2bin, simulation_n = simulation_n, padj_cutoffs = padj_cutoffs, out_dir = out_dir)
+	crispr_surf_sgRNA_summary_table_update(sgRNA_summary_table = sgRNAs_summary_table, gammas2betas = gammas2betas_updated, averaging_method = averaging_method, scale = scale, guideindices2bin = guideindices2bin, simulation_n = simulation_n, padj_cutoffs = padj_cutoffs, out_dir = out_dir)
 	logger.info('Successfully updated sgRNA summary table ...')
 
 except:
@@ -265,7 +275,7 @@ except:
 
 ##### Output significant regions file
 try:
-	crispr_surf_significant_regions(sgRNA_summary_table = sgRNA_summary_file.replace('.csv', '_updated.csv'), gammas2betas = gammas2betas_updated, padj_cutoffs = padj_cutoffs, scale = scale, guideindices2bin = guideindices2bin, out_dir = out_dir)
+	crispr_surf_significant_regions(sgRNA_summary_table = sgRNAs_summary_table.split('/')[-1].replace('.csv', '_updated.csv'), gammas2betas = gammas2betas_updated, padj_cutoffs = padj_cutoffs, scale = scale, guideindices2bin = guideindices2bin, out_dir = out_dir)
 	logger.info('Successfully created significant regions file ...')
 
 except:
@@ -274,7 +284,7 @@ except:
 
 ##### Output IGV tracks
 try:
-	crispr_surf_IGV(sgRNA_summary_table = sgRNA_summary_file.replace('.csv', '_updated.csv'), gammas2betas = gammas2betas_updated, padj_cutoffs = padj_cutoffs, genome = genome, scale = scale, guideindices2bin = guideindices2bin, out_dir = out_dir)
+	crispr_surf_IGV(sgRNA_summary_table = sgRNAs_summary_table.split('/')[-1].replace('.csv', '_updated.csv'), gammas2betas = gammas2betas_updated, padj_cutoffs = padj_cutoffs, genome = genome, scale = scale, guideindices2bin = guideindices2bin, out_dir = out_dir)
 	logger.info('Successfully created IGV tracks ...')
 
 except:
@@ -283,7 +293,7 @@ except:
 
 ##### Write parameters file
 parameters = {
-'sgRNA_summary_file': sgRNA_summary_file,
+'sgRNAs_summary_table': sgRNAs_summary_table,
 'perturbation_type': perturbation_type,
 'characteristic_perturbation_range': characteristic_perturbation_range,
 'scale': scale,
@@ -295,7 +305,7 @@ parameters = {
 'gamma_list': ' '.join(map(str, gamma_list)),
 'gamma': gamma,
 'gamma_used': gamma_use,
-'correlation_ratio': correlation_ratio,
+'correlation': correlation,
 'genome': genome,
 'effect_size': effect_size,
 'padj_cutoffs': ' '.join(map(str, padj_cutoffs)),

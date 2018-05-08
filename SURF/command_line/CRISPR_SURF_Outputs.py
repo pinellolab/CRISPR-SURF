@@ -89,7 +89,7 @@ def crispr_surf_sgRNA_summary_table_update(sgRNA_summary_table, gammas2betas, av
 	df_summary_table['Pval_adj.'] = padj_values
 
 	# Output updated sgRNA summary table
-	with open(out_dir + '/' + sgRNA_summary_table.replace('.csv', '_updated.csv'), 'w') as f:
+	with open(out_dir + '/' + sgRNA_summary_table.split('/')[-1].replace('.csv', '_updated.csv'), 'w') as f:
 
 		# Write columns
 		f.write(','.join(map(str, df_summary_table.columns)) + '\n')
@@ -131,7 +131,7 @@ def crispr_surf_significant_regions(sgRNA_summary_table, gammas2betas, padj_cuto
 	"""
 
 	# Import sgRNA summary table
-	df_summary_table = pd.read_csv(out_dir + '/' + sgRNA_summary_table)
+	df_summary_table = pd.read_csv(out_dir + '/' + sgRNA_summary_table.split('/')[-1])
 
 	# Boundaries of inference
 	diff_vec = [0] + list(np.diff(gammas2betas['indices']))
@@ -203,7 +203,7 @@ def crispr_surf_IGV(sgRNA_summary_table, gammas2betas, padj_cutoffs, genome, sca
 	"""
 
 	# Import sgRNA summary table
-	df_summary_table = pd.read_csv(out_dir + '/' + sgRNA_summary_table)
+	df_summary_table = pd.read_csv(out_dir + '/' + sgRNA_summary_table.split('/')[-1])
 	replicates = len([x for x in df_summary_table.columns.tolist() if 'Log2FC_Replicate' in x])
 
 	# Boundaries of inference
@@ -270,7 +270,7 @@ def crispr_surf_IGV(sgRNA_summary_table, gammas2betas, padj_cutoffs, genome, sca
 			statistical_power.write('\t'.join(map(str, [gammas2betas['chr'][index], int(gammas2betas['indices'][index]), int(gammas2betas['indices'][index]), float(gammas2betas['power'][index])])) + '\n')
 
 	# Create IGV session
-	with open('igv_session_template.xml', 'r') as f:
+	with open('/SURF/igv_session_template.xml', 'r') as f:
 		igv_template = f.read()
 
 	igv_template = igv_template.replace('#genome#', str(genome))

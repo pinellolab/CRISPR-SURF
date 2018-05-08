@@ -4,8 +4,7 @@ CRISPR-SURF (**S**creening of **U**ncharacterized **R**egion **F**unction) is an
 
 CRISPR-SURF is available as a user-friendly, open-source software and can be used interactively as a web application at [crisprsurf.pinellolab.org](http://crisprsurf.pinellolab.org/) or as a stand-alone command-line tool with Docker [https://github.com/pinellolab/CRISPR-SURF](https://github.com/pinellolab/CRISPR-SURF).
 
-Installation with Docker
-------------------------
+## Installation with Docker
 
 With Docker, no installation is required - the only dependence is Docker itself. Users will not need to deal with installation and configuration issues. Docker will do all the dirty work for you!
 
@@ -14,8 +13,66 @@ Docker can be downloaded freely here: [https://store.docker.com/search?offering=
 To get a local copy of CRISPR-SURF, simply execute the following command:
 * ```docker pull pinellolab/crisprsurf```
 
-CRISPR-SURF Interactive Website
---------------------------
+## CRISPR-SURF Count
+
+The CRISPR-SURF Count script generates a required input file, the sgRNA summary file, for both the CRISPR-SURF interactive website and command-line interface. You will need one of the following:
+
+* **Option (1)** sgRNA Library File with FASTQs
+* **Option (2)** sgRNA Library File with counts
+
+**Option (1)**:
+
+sgRNA Library File Format Example (.CSV):
+
+| Chr           | Start         | Stop          | sgRNA_Sequence       | Strand | sgRNA_Type       |
+| ------------- | ------------- | ------------- | -------------------- | ------ | ---------------- |
+| chr2          | 60717499      | 60717519      | AGCTCTGGAATGATGGCTTA | -      | observation      |
+| chr2          | 60717506      | 60717526      | ATTGTGGAGCTCTGGAATGA | +      | observation      |
+| chr2          | 60717514      | 60717534      | GGAGTTGGATTGTGGAGCTC | +      | observation      |
+| chr2          | 60717522      | 60717542      | AGAAAATTGGAGTTGGATTG | -      | negative_control |
+| chr2          | 60717529      | 60717549      | CTGGAATAGAAAATTGGAGT | +      | positive_control |
+
+Required Column Names: Chr, Start, Stop, sgRNA_Sequence, Strand, sgRNA_Type
+* Chr - Chromosome
+* Start - sgRNA Start Genomic Coordinate
+* Stop - sgRNA Start Genomic Coordinate
+* sgRNA_Sequence - sgRNA sequence not including PAM sequence
+* Strand - Targeting strand of the sgRNA
+* sgRNA_Type - Label for sgRNA type (observation, negative_control, positive_control)
+
+Place the sgRNA Library File and FASTQs in the same directory. The Control FASTQs represent the sgRNA distribution prior to selection, while the Sample FASTQs represent the sgRNA distribution following selection. Assuming the sgRNA Library File is named sgRNA_library_file.csv and the FASTQs (2 replicates) are named rep1_control.fastq, rep2_control.fastq, rep1_sample.fastq, rep2_sample.fastq, the command-line call would look like:
+
+``` 
+docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count -f sgRNA_library_file.csv -control_fastqs rep1_control.fastq rep2_control.fastq -sample_fastqs rep1_sample.fastq rep2_sample.fastq
+```
+
+**Option (2)**:
+
+sgRNA Library File Format Example (.CSV):
+
+| Chr           | Start         | Stop          | sgRNA_Sequence       | Strand | sgRNA_Type       | Replicate1_Control_Count | Replicate2_Control_Count | Replicate1_Sample_Count | Replicate2_Sample_Count |
+| ------------- | ------------- | ------------- | -------------------- | ------ | ---------------- | ------------------------ | ------------------------ | ----------------------- | ----------------------- |
+| chr2          | 60717499      | 60717519      | AGCTCTGGAATGATGGCTTA | -      | observation      | 322                      | 615                      | 131                     | 403                     |
+| chr2          | 60717506      | 60717526      | ATTGTGGAGCTCTGGAATGA | +      | observation      | 365                      | 812                      | 448                     | 227                     |
+| chr2          | 60717514      | 60717534      | GGAGTTGGATTGTGGAGCTC | +      | observation      | 86                       | 169                      | 13                      | 129                     |
+| chr2          | 60717522      | 60717542      | AGAAAATTGGAGTTGGATTG | -      | negative_control | 1823                     | 381                      | 1923                    | 321                     |
+| chr2          | 60717529      | 60717549      | CTGGAATAGAAAATTGGAGT | +      | positive_control | 54                       | 124                      | 355                     | 521                     |
+
+Required Column Names: Chr, Start, Stop, sgRNA_Sequence, Strand, sgRNA_Type
+* Chr - Chromosome
+* Start - sgRNA Start Genomic Coordinate
+* Stop - sgRNA Start Genomic Coordinate
+* sgRNA_Sequence - sgRNA sequence not including PAM sequence
+* Strand - Targeting strand of the sgRNA
+* sgRNA_Type - Label for sgRNA type (observation, negative_control, positive_control)
+* Replicate1_Control_Count - sgRNA Count in Replicate 1 Control FASTQ (pre-selection)
+* Replicate2_Control_Count - sgRNA Count in Replicate 2 Control FASTQ (pre-selection)
+* Replicate1_Sample_Count - sgRNA Count in Replicate 1 Sample FASTQ (post-selection)
+* Replicate2_Sample_Count - sgRNA Count in Replicate 2 Sample FASTQ (post-selection)
+
+**IMPORTANT:** More Replicate_Control_Count and Replicate_Sample_Count columns can be added depending on the number of replicates used in the experiment.
+
+## CRISPR-SURF Interactive Website
 
 In order to make CRISPR-SURF more user-friendly and accessible, we have created an interactive website: [http://crisprsurf.pinellolab.org](http://crisprsurf.pinellolab.org). The website implements all the features of the command line version and, in addition, provides interactive and exploratory plots to visualize your CRISPR tiling screen data.
 

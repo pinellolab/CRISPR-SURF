@@ -218,21 +218,21 @@ Simply change ```-pert cas9``` to ```-pert crispri``` or ```-pert crispra``` for
 
 ## Output Files
 
-**sgRNAs_summary_table_updated.csv:** An updated sgRNAs summary table with deconvolution and p-adj. values.
+**1. sgRNAs_summary_table_updated.csv:** An updated sgRNAs summary table with deconvolution and p-adj. values.
 
-**igv_session.xml:** An IGV session for the following tracks
+**2. igv_session.xml:** An IGV session for the following tracks
 * **raw_scores.bedgraph** - sgRNA enrichment scores
 * **deconvolved_scores.bedgraph** - deconvolution beta profile
 * **positive_significant_regions.bed** - positive significant regions at set FDR
 * **negative_significant_regions.bed** - negative significant regions at set FDR
 * **statistical_power.bedgraph** - statistical power track at set effect size and FDR
 
-**significant_regions.csv:** List of the significant regions and its associated statistics and supporting sgRNAs.
+**3. significant_regions.csv:** List of the significant regions and its associated statistics and supporting sgRNAs.
 
-**beta_profile.csv:** Full deconvolution beta profile with associated statistics.
+**4. beta_profile.csv:** Full deconvolution beta profile with associated statistics.
 
-**correlation_curve_gamma.csv:** The correlation curve generated for determining gamma.
+**5. correlation_curve_gamma.csv:** The correlation curve generated for determining gamma.
 
-**crispr-surf_parameters.csv:** The CRISPR-SURF analysis parameters used during the analysis session.
+**6. crispr-surf_parameters.csv:** The CRISPR-SURF analysis parameters used during the analysis session.
 
-**crispr-surf.log:** The log file for CRISPR-SURF analysis.
+**7. crispr-surf.log:** The log file for CRISPR-SURF analysis.

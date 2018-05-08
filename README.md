@@ -79,7 +79,8 @@ Required Column Names:
 * **Strand** - Targeting strand of the sgRNA
 * **sgRNA_Type** - Label for sgRNA type (observation, negative_control, positive_control)
 
-Place the sgRNA Library File and FASTQs in the same directory. The control FASTQs represent the sgRNA distribution prior to selection, while the sample FASTQs represent the sgRNA distribution following selection. Assuming the sgRNA Library File is named sgRNA_library_file.csv and the FASTQs (2 replicates) are named rep1_control.fastq, rep2_control.fastq, rep1_sample.fastq, rep2_sample.fastq, the command-line call would look like:
+**Example Command-Line Run**
+Place the sgRNA library file and FASTQs in the same directory. The control FASTQs represent the sgRNA distribution prior to selection, while the sample FASTQs represent the sgRNA distribution following selection. Assuming the sgRNA library file is named sgRNA_library_file.csv and the FASTQs (2 replicates) are named rep1_control.fastq, rep2_control.fastq, rep1_sample.fastq, rep2_sample.fastq, the command-line call would look like:
 
 ``` 
 docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count -f sgRNA_library_file.csv -control_fastqs rep1_control.fastq rep2_control.fastq -sample_fastqs rep1_sample.fastq rep2_sample.fastq
@@ -110,13 +111,20 @@ Required Column Names:
 * **Replicate1_Sample_Count** - sgRNA Count in Replicate 1 Sample FASTQ (post-selection)
 * **Replicate2_Sample_Count** - sgRNA Count in Replicate 2 Sample FASTQ (post-selection)
 
+**Example Command-Line Run**
+Go into the directory where the sgRNA library file is located. Assuming the sgRNA library file with counts is named sgRNA_library_file_w_counts.csv, the command-line call would look like:
+
+``` 
+docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count -f sgRNA_library_file_w_counts.csv
+```
+
 **IMPORTANT:** Additional ReplicateN_Control_Count and ReplicateN_Sample_Count columns can be added depending on the number of replicates used in the experiment. The number of ReplicateN_Control_Count columns must equal ReplicateN_Sample_Count columns. If a single control column (i.e. plasmid count) is used for multiple sample counts, just duplicate the single control column with the appropriate column names.
 
 ## CRISPR-SURF Interactive Website
 
-In order to make CRISPR-SURF more user-friendly and accessible, we have created an interactive website: [http://crisprsurf.pinellolab.org](http://crisprsurf.pinellolab.org). The website implements all the features of the command line version and, in addition, provides interactive and exploratory plots to visualize your CRISPR tiling screen data.
+In order to make CRISPR-SURF more user-friendly and accessible, we have created an interactive website: [http://crisprsurf.pinellolab.org](http://crisprsurf.pinellolab.org). The website implements all the features of the CRISPR-SURF command-line tool (except CRISPR-SURF Count) and, in addition, provides interactive and exploratory plots to visualize your CRISPR tiling screen data.
 
-The website offers two functions: 1) Running CRISPR-SURF on CRISPR tiling screen data provided by the user and 2) Visualizing CRISPR-SURF analysis on several published data sets, serving as the first database dedicated to CRISPR tiling screen data.
+The website offers two functions: 1) Running CRISPR-SURF on data provided by the user and 2) Visualizing CRISPR-SURF analysis on several published data sets, serving as the first database dedicated to CRISPR tiling screen data.
 
 The website can also run on a local machine using the provided Docker image we have created. To run the website on a local machine after the Docker installation, execute the following command from the command line:
 * ```docker run -p 9993:9993 pinellolab/crisprsurf SURF_webapp```

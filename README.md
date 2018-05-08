@@ -15,10 +15,11 @@ To get a local copy of CRISPR-SURF, simply execute the following command:
 
 ## CRISPR-SURF Count
 
-The CRISPR-SURF Count script generates a required input file, the sgRNA summary file, for both the CRISPR-SURF interactive website and command-line interface. Below is an overview of how to run CRISPR-SURF Count:
+The CRISPR-SURF Count script generates a required input file, ```sgRNAs_summary_table.csv```, for both the CRISPR-SURF interactive website and command-line interface. Run CRISPR-SURF Count in the terminal with the command:
 
-* start a terminal session;
-* ```docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count [options]```
+```
+docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count [options]
+```
 
 Users can specify the following options:
 ```
@@ -131,3 +132,47 @@ The website can also run on a local machine using the provided Docker image we h
 
 After execution of the command, the user will have a local instance of the website accessible at the URL: 
 [http://localhost:9993](http://localhost:9993)
+
+## CRISPR-SURF Command-Line Interface
+
+The CRISPR-SURF command-line interface takes ```sgRNAs_summary_table.csv``` (generated from CRISPR-SURF Count) as input. Run the CRISPR-SURF command-line tool in the terminal with the command:
+
+```
+docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_deconvolution [options]
+```
+
+Users can specify the following options:
+```
+-f, --sgRNAs_summary_table
+      Input sgRNAs summary table. Direct output of CRISPR-SURF Count. (Default: None)
+-pert, --perturbation_type
+      The CRISPR perturbation type used in the tiling experiment. (cas9, cpf1, crispri, crispra)
+-range, --characteristic_perturbation_range (Default: None)
+      Characteristic perturbation length. If 0 (default), the --perturbation_type argument will be used to set an appropriate perturbation range. (Default: 0)
+-scale, --scale
+      Scaling factor to efficiently perform deconvolution with negligible consequences. If 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate scaling factor. (Default: 0)
+-limit, --limit
+      Maximum distance between two sgRNAs to perform inference on bp in-between. Sets the boundaries of the gaussian profile to perform efficient deconvolution. If 0 (default), the --perturbation_type argument will be used to set an appropriate limit. (Default: 0)
+-avg, --averaging_method
+      The averaging method to be performed to combine biological replicates. (mean, median | Default: median)
+-sim_type, --simulation_type
+      The method of building a null distribution for each smoothed beta score. (negative_control, gaussian, laplace | Default: gaussian)
+-sim_n, --simulation_n
+      The number of simulations to perform for construction of the null distribution. (Default: 1000)
+-gamma_list, --gamma_list
+      List of gammas (regularization parameter) to use during deconvolution step. If 0 (default), the --perturbation_type argument will be used to set a reasonable gamma list. Example: 1 2 3 4 5 6 7 8 9 10. (Default: 0)
+-gamma, --gamma
+      The gamma to use to use during deconvolution step. If 0 (default), the --gamma_list argument will be used. (Default: 0)
+-corr, --correlation
+      The correlation between biological replicates to determine a reasonable gamma for the deconvolution operation. if 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate correlation.
+-genome, --genome
+      The genome to be used to create the IGV session file. (hg19, hg38, mm9, mm10, etc. | Default: hg19)
+-effect_size, --effect_size
+      Effect size to estimate statistical power. (Default: 1)
+-padjs, --padj_cutoffs
+      List of p-adj. (Benjamini-Hochberg) cut-offs for determining significance of regulatory regions in the CRISPR tiling screen. Example: 0.01 0.05 0.1 0.15. (Default: 0.05)
+-rapid, --rapid_mode
+      Significance testing can be performed more rapidly with the assumption beta nulls come from same distribution. (Default: False)
+-out_dir, --out_directory
+      The name of the output directory to place CRISPR-SURF analysis files. (Default: CRISPR_SURF_Analysis_[INSERT TIMESTAMP])
+```

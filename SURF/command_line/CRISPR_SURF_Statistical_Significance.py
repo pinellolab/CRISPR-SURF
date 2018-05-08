@@ -48,13 +48,13 @@ def crispr_surf_deconvolved_signal(gammas2betas, gamma_chosen, averaging_method,
 	indices = gammas2betas['indices']
 	betas = gammas2betas['combined']
 
-	df = pd.DataFrame({
-		'Chr': chrom,
-		'Index': indices,
-		'Beta': betas
-		})
+	# df = pd.DataFrame({
+	# 	'Chr': chrom,
+	# 	'Index': indices,
+	# 	'Beta': betas
+	# 	})
 
-	df.to_csv(path_or_buf = (out_dir + '/beta_profile.bedgraph'), index = False, header = False, columns = ['Chr','Index','Index','Beta'], sep = '\t')
+	# df.to_csv(path_or_buf = (out_dir + '/beta_profile.bedgraph'), index = False, header = False, columns = ['Chr','Index','Index','Beta'], sep = '\t')
 
 	return gammas2betas
 

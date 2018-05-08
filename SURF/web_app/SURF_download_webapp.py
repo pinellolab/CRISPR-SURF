@@ -56,3 +56,28 @@ print '2 FINISHED OUTPUTTING SIGNIFICANT REGIONS'
 print '1 OUTPUTTING IGV TRACKS'
 crispr_surf_IGV(sgRNA_summary_table = 'sgRNAs_summary_table_updated.csv', gammas2betas = data_dict2['gammas2betas'], padj_cutoffs = [data_dict2['fdr']], genome = data_dict['genome'], scale = data_dict['scale'], guideindices2bin = data_dict['guideindices2bin'], out_dir = RESULTS_FOLDER)
 print '2 FINISHED OUTPUTTING IGV TRACKS'
+
+##### Write parameters file
+parameters = {
+'sgRNAs_summary_table': UPLOADS_FOLDER + '/sgRNAs_summary_table.csv',
+'perturbation_type': data_dict['pert'],
+'characteristic_perturbation_range': data_dict['range'],
+'scale': data_dict['scale'],
+'limit': data_dict['limit'],
+'averaging_method': data_dict['avg'],
+'simulation_type': data_dict['sim_type'],
+'simulation_n': data_dict['sim_n'],
+'gamma_list': ' '.join(map(str, data_dict['gamma_list'])),
+'gamma_used': data_dict['gamma_use'],
+'correlation': data_dict['correlation'],
+'genome': data_dict['genome'],
+'effect_size': data_dict['effect_size'],
+'padj_cutoffs': ' '.join(map(str, [data_dict2['fdr']])),
+'rapid_mode': data_dict['rapid'],
+'out_directory': RESULTS_FOLDER
+}
+
+with open(RESULTS_FOLDER + '/crispr-surf_parameters.csv', 'w') as f:
+    f.write(','.join(map(str, ['Argument','Value'])) + '\n')
+    for parameter in sorted(parameters):
+        f.write(','.join(map(str, [parameter, parameters[parameter]])) + '\n')

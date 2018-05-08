@@ -211,7 +211,7 @@ app.layout = html.Div([
             {'label': 'Step 2: Analysis Parameters', 'value': 'parameters'},
             {'label': 'Step 3: Run CRISPR-SURF', 'value': 'deconvolution'},
             {'label': 'Step 4: Find Regions', 'value': 'significance'},
-            {'label': 'Step 6: Download Results', 'value': 'download'}
+            {'label': 'Step 5: Download Results', 'value': 'download'}
         ],
         value='upload',
         id='tabs',
@@ -1450,6 +1450,21 @@ def update_perturbation_range_label(perturbation_type, pathname):
     elif perturbation_type == 'be':
         return 10
 
+@app.callback(Output('replicate-correlation', 'value'),
+              [Input('pert', 'value')],
+              state = [State('url', 'pathname')])
+
+def update_replicate_correlation(perturbation_type, pathname):
+
+    if perturbation_type == 'cas9' or perturbation_type == 'cpf1':
+        return 0.8
+
+    elif perturbation_type == 'crispri' or perturbation_type == 'crispra':
+        return 0.9
+
+    else:
+        return 0.8
+
 @app.callback(Output('limit-show', 'children'),
               [Input('limit', 'value')],
               state = [State('url', 'pathname')])
@@ -1556,9 +1571,10 @@ def update_effect_size(effect_size, pathname):
     State('effect_size', 'value'),
     State('rapid', 'value'),
     State('genome', 'value'),
+    State('pert', 'value'),
     State('url', 'pathname')])
 
-def perform_deconvolution(n_clicks, range_val, scale_val, limit_val, gamma_list, avg, sim_type, sim_n, effect_size, rapid, genome, pathname):
+def perform_deconvolution(n_clicks, range_val, scale_val, limit_val, gamma_list, avg, sim_type, sim_n, effect_size, rapid, genome, pert_type, pathname):
 
     if n_clicks > 0:
 
@@ -1622,6 +1638,8 @@ def perform_deconvolution(n_clicks, range_val, scale_val, limit_val, gamma_list,
         data_dict['effect_size'] = effect_size
         data_dict['rapid'] = rapid
         data_dict['genome'] = genome
+        data_dict['pert'] = pert_type
+        data_dict['range'] = range_val
 
         with open(UPLOADS_FOLDER + '/data.json', 'w') as f:
             new_json_string = json.dumps(data_dict)
@@ -1966,6 +1984,7 @@ def update_deconvolution_plot(update_graph_clicks, chrom_opt, avg, scale_val, ch
         param_dict['deconvolution-clicks'] += 1
         param_dict['checkbutton1'] = deconvolution_n_clicks + 1
         data_dict['computed'] = True
+        data_dict['correlation'] = correlation_use
 
         with open(UPLOADS_FOLDER + '/params.json', 'w') as f:
             new_json_string = json.dumps(param_dict)
@@ -2095,6 +2114,7 @@ def update_deconvolution_plot(update_graph_clicks, chrom_opt, avg, scale_val, ch
         param_dict['deconvolution-clicks'] += 1
         param_dict['checkbutton1'] = deconvolution_n_clicks + 1
         data_dict['computed'] = True
+        data_dict['correlation'] = correlation_use
 
         with open(UPLOADS_FOLDER + '/params.json', 'w') as f:
             new_json_string = json.dumps(param_dict)

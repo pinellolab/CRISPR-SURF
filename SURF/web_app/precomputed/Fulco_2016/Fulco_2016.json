@@ -1,1 +1,1 @@
-{"title": "Fulco, C. et al. 2016","description": "tmp","command_used": "tmp","pert": "crispri","pert_l": 200,"scale": 20,"limit": 300,"fdr": 0.05}
+{"title": "Fulco, C. et al. 2016","description": "CRISPRi tiling of MYC locus for enhancer discovery.","perturbation": "crispri","range": 200,"scale": 20,"fdr": 0.05}

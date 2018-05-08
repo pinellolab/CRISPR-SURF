@@ -1,1 +1,1 @@
-{"title": "Hsu, JY. et al. 2018","description": "tmp","command_used": "tmp","pert": "cas9","pert_l": 7,"scale": 1,"limit": 25,"fdr": 0.05}
+{"title": "Hsu, JY. et al. 2018","description": "CRISPR-Cas9 tiling of DHSs near BCL11A locus for enhancer dissection.","perturbation": "cas9","range": 7,"scale": 1,"fdr": 0.05}

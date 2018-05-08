@@ -70,7 +70,7 @@ def get_data(path):
         return os.path.join(_ROOT, path)
 
 # Logos
-crisprsurf_logo = get_data('crisprsurf_logo.png')
+crisprsurf_logo = get_data('crisprsurf_logo_extended.png')
 crisprsurf_logo_image = base64.b64encode(open(crisprsurf_logo, 'rb').read())
 
 mgh_logo = get_data('mgh.png')
@@ -202,7 +202,7 @@ app.layout = html.Div([
 
 		], style = {'display':'none'}),
 
-	html.Img(src='data:image/png;base64,{}'.format(crisprsurf_logo_image), width = '50%'),
+	html.Img(src='data:image/png;base64,{}'.format(crisprsurf_logo_image), width = '100%'),
 	html.H2('CRISPR Screening Uncharacterized Region Function'),
 
     dcc.Tabs(
@@ -2394,30 +2394,6 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
 
         boundaries.append(len(indices_filt))
 
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
-
-            fig.append_trace(go.Scatter(
-                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
-                y=[0] + power_filt[start_index:stop_index] + [0],
-                mode = 'lines',
-                fill='tozeroy',
-                showlegend=False,
-                # yaxis = 'y2',
-                line=dict(color='rgb(255,165,0)')), 1, 1)
-
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
-
-            fig.append_trace(go.Scatter(
-                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
-                y=[0] + y_p_filt[start_index:stop_index] + [0],
-                mode = 'lines',
-                fill='tozeroy',
-                showlegend=False,
-                yaxis = 'y2',
-                line=dict(color='rgb(169,169,169)')), 2, 1)
-
         # Find indices with significant padj-values
         significant_boundary_indices = []
         padj_list = [float(x) for x in gammas2betas['padj']]
@@ -2446,6 +2422,15 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     x=[genomic_boundary_start, genomic_boundary_stop],
                     y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
                     mode = 'lines',
+                    fill='tozeroy',
+                    showlegend=False,
+                    yaxis = 'y2',
+                    line=dict(color='rgb(255,204,204)', width = 5)), 2, 1)
+
+                fig.append_trace(go.Scatter(
+                    x=[genomic_boundary_start, genomic_boundary_stop],
+                    y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+                    mode = 'lines',
                     # fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
@@ -2455,10 +2440,103 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     x=[genomic_boundary_start, genomic_boundary_stop],
                     y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
                     mode = 'lines',
+                    fill='tozeroy',
+                    showlegend=False,
+                    yaxis = 'y2',
+                    line=dict(color='#bbddff', width = 5)), 2, 1)
+
+                fig.append_trace(go.Scatter(
+                    x=[genomic_boundary_start, genomic_boundary_stop],
+                    y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
+                    mode = 'lines',
                     # fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
                     line=dict(color='rgb(30,144,255)', width = 5)), 2, 1)
+
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + power_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                # yaxis = 'y2',
+                line=dict(color='rgb(255,165,0)')), 1, 1)
+
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + y_p_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                yaxis = 'y2',
+                line=dict(color='rgb(169,169,169)')), 2, 1)
+
+        # # Find indices with significant padj-values
+        # significant_boundary_indices = []
+        # padj_list = [float(x) for x in gammas2betas['padj']]
+        # for i in range(len(boundaries) - 1):
+        #     start_index, stop_index = boundaries[i], boundaries[i + 1]
+        #     significant_indices = [1 if x < fdr else 0 for x in padj_list[start_index:stop_index]]
+        #     significant_boundary_indices_tmp = [j + start_index for j, k in enumerate(np.diff([0] + significant_indices)) if k != 0]
+
+        #     if len(significant_boundary_indices_tmp)%2 == 1:
+        #         significant_boundary_indices_tmp.append(stop_index - 1)
+
+        #     significant_boundary_indices += significant_boundary_indices_tmp
+
+        # for i, j in zip(significant_boundary_indices[0::2], significant_boundary_indices[1::2]):
+
+        #     boundary_start = int(i)
+        #     boundary_stop = int(j)
+
+        #     genomic_boundary_start = int(gammas2betas['indices'][boundary_start])
+        #     genomic_boundary_stop = int(gammas2betas['indices'][boundary_stop])
+
+        #     signal_mean = np.mean(gammas2betas['combined'][boundary_start:boundary_stop])
+
+        #     if signal_mean > np.median(gammas2betas['combined']):
+        #         fig.append_trace(go.Scatter(
+        #             x=[genomic_boundary_start, genomic_boundary_stop],
+        #             y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+        #             mode = 'lines',
+        #             fill='tozeroy',
+        #             showlegend=False,
+        #             yaxis = 'y2',
+        #             line=dict(color='rgb(255,204,204)', width = 5)), 2, 1)
+
+        #         fig.append_trace(go.Scatter(
+        #             x=[genomic_boundary_start, genomic_boundary_stop],
+        #             y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+        #             mode = 'lines',
+        #             # fill='tozeroy',
+        #             showlegend=False,
+        #             yaxis = 'y2',
+        #             line=dict(color='rgb(255,0,0)', width = 5)), 2, 1)
+        #     else:
+        #         fig.append_trace(go.Scatter(
+        #             x=[genomic_boundary_start, genomic_boundary_stop],
+        #             y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
+        #             mode = 'lines',
+        #             fill='tozeroy',
+        #             showlegend=False,
+        #             yaxis = 'y2',
+        #             line=dict(color='#bbddff', width = 5)), 2, 1)
+
+        #         fig.append_trace(go.Scatter(
+        #             x=[genomic_boundary_start, genomic_boundary_stop],
+        #             y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
+        #             mode = 'lines',
+        #             # fill='tozeroy',
+        #             showlegend=False,
+        #             yaxis = 'y2',
+        #             line=dict(color='rgb(30,144,255)', width = 5)), 2, 1)
 
         fig['layout'].update(
             height=600,
@@ -2517,30 +2595,6 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
 
         boundaries.append(len(indices_filt))
 
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
-
-            fig.append_trace(go.Scatter(
-                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
-                y=[0] + power_filt[start_index:stop_index] + [0],
-                mode = 'lines',
-                fill='tozeroy',
-                showlegend=False,
-                # yaxis = 'y2',
-                line=dict(color='rgb(255,165,0)')), 1, 1)
-
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
-
-            fig.append_trace(go.Scatter(
-                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
-                y=[0] + y_p_filt[start_index:stop_index] + [0],
-                mode = 'lines',
-                fill='tozeroy',
-                showlegend=False,
-                yaxis = 'y2',
-                line=dict(color='rgb(169,169,169)')), 2, 1)
-
         # Find indices with significant padj-values
         significant_boundary_indices = []
         padj_list = [float(x) for x in gammas2betas['padj']]
@@ -2569,11 +2623,30 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     x=[genomic_boundary_start, genomic_boundary_stop],
                     y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
                     mode = 'lines',
+                    fill='tozeroy',
+                    showlegend=False,
+                    yaxis = 'y2',
+                    line=dict(color='rgb(255,204,204)', width = 5)), 2, 1)
+
+                fig.append_trace(go.Scatter(
+                    x=[genomic_boundary_start, genomic_boundary_stop],
+                    y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+                    mode = 'lines',
                     # fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
                     line=dict(color='rgb(255,0,0)', width = 5)), 2, 1)
+
             else:
+                fig.append_trace(go.Scatter(
+                    x=[genomic_boundary_start, genomic_boundary_stop],
+                    y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
+                    mode = 'lines',
+                    fill='tozeroy',
+                    showlegend=False,
+                    yaxis = 'y2',
+                    line=dict(color='#bbddff', width = 5)), 2, 1)
+
                 fig.append_trace(go.Scatter(
                     x=[genomic_boundary_start, genomic_boundary_stop],
                     y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
@@ -2582,6 +2655,92 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     showlegend=False,
                     yaxis = 'y2',
                     line=dict(color='rgb(30,144,255)', width = 5)), 2, 1)
+
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + power_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                # yaxis = 'y2',
+                line=dict(color='rgb(255,165,0)')), 1, 1)
+
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + y_p_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                yaxis = 'y2',
+                line=dict(color='rgb(169,169,169)')), 2, 1)
+
+        # # Find indices with significant padj-values
+        # significant_boundary_indices = []
+        # padj_list = [float(x) for x in gammas2betas['padj']]
+        # for i in range(len(boundaries) - 1):
+        #     start_index, stop_index = boundaries[i], boundaries[i + 1]
+        #     significant_indices = [1 if x < fdr else 0 for x in padj_list[start_index:stop_index]]
+        #     significant_boundary_indices_tmp = [j + start_index for j, k in enumerate(np.diff([0] + significant_indices)) if k != 0]
+
+        #     if len(significant_boundary_indices_tmp)%2 == 1:
+        #         significant_boundary_indices_tmp.append(stop_index - 1)
+
+        #     significant_boundary_indices += significant_boundary_indices_tmp
+
+        # for i, j in zip(significant_boundary_indices[0::2], significant_boundary_indices[1::2]):
+
+        #     boundary_start = int(i)
+        #     boundary_stop = int(j)
+
+        #     genomic_boundary_start = int(gammas2betas['indices'][boundary_start])
+        #     genomic_boundary_stop = int(gammas2betas['indices'][boundary_stop])
+
+        #     signal_mean = np.mean(gammas2betas['combined'][boundary_start:boundary_stop])
+
+        #     if signal_mean > np.median(gammas2betas['combined']):
+        #         fig.append_trace(go.Scatter(
+        #             x=[genomic_boundary_start, genomic_boundary_stop],
+        #             y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+        #             mode = 'lines',
+        #             fill='tozeroy',
+        #             showlegend=False,
+        #             yaxis = 'y2',
+        #             line=dict(color='rgb(255,204,204)', width = 5)), 2, 1)
+
+        #         fig.append_trace(go.Scatter(
+        #             x=[genomic_boundary_start, genomic_boundary_stop],
+        #             y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+        #             mode = 'lines',
+        #             # fill='tozeroy',
+        #             showlegend=False,
+        #             yaxis = 'y2',
+        #             line=dict(color='rgb(255,0,0)', width = 5)), 2, 1)
+
+        #     else:
+        #         fig.append_trace(go.Scatter(
+        #             x=[genomic_boundary_start, genomic_boundary_stop],
+        #             y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
+        #             mode = 'lines',
+        #             fill='tozeroy',
+        #             showlegend=False,
+        #             yaxis = 'y2',
+        #             line=dict(color='#bbddff', width = 5)), 2, 1)
+
+        #         fig.append_trace(go.Scatter(
+        #             x=[genomic_boundary_start, genomic_boundary_stop],
+        #             y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
+        #             mode = 'lines',
+        #             # fill='tozeroy',
+        #             showlegend=False,
+        #             yaxis = 'y2',
+        #             line=dict(color='rgb(30,144,255)', width = 5)), 2, 1)
+
 
         try:
             start = int(start)
@@ -2625,9 +2784,14 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
     [Input('download-total', 'n_clicks'),
     Input('url', 'pathname')],
     state = [State('title-input', 'value'),
-    State('description-input', 'value')])
+    State('description-input', 'value'),
+    State('pert', 'value'),
+    State('range','value'),
+    State('scale','value'),
+    State('fdr','value')
+    ])
 
-def zip_dir(n_clicks, pathname, title_input, description_input):
+def zip_dir(n_clicks, pathname, title_input, description_input, perturbation_type, perturbation_range, scale, fdr):
 
     if pathname:
 
@@ -2637,7 +2801,11 @@ def zip_dir(n_clicks, pathname, title_input, description_input):
         if n_clicks > 0:
 
             json_file = {'title': title_input,
-                        'description': description_input}
+                        'description': description_input,
+                        'perturbation': perturbation_type,
+                        'range': perturbation_range,
+                        'scale': scale,
+                        'fdr': fdr}
 
             with open('%s/surf.json' % (RESULTS_FOLDER), 'w') as f:
                 json_string = json.dumps(json_file)
@@ -2660,8 +2828,12 @@ def generate_report_url(directory):
     RESULTS_FOLDER = '/tmp/RESULTS_FOLDER/%s' % directory
     UPLOADS_FOLDER = '/tmp/UPLOADS_FOLDER/%s' % directory
 
+    sb.call('cp /SURF/web_app/igv_session_template.xml %s' % RESULTS_FOLDER, shell = True)
+
     proc = sb.Popen('python /SURF/web_app/SURF_download_webapp.py -uploads_dir %s -results_dir %s' % (UPLOADS_FOLDER, RESULTS_FOLDER), shell = True)
     proc.wait()
+
+    sb.call('rm %s/igv_session_template.xml' % RESULTS_FOLDER, shell = True)
 
     if os.path.exists('%s/%s' % (RESULTS_FOLDER, overview_folder)):
         sb.call('rm -r %s/%s' % (RESULTS_FOLDER, overview_folder), shell = True)
@@ -2690,7 +2862,7 @@ app2.layout = html.Div([
 
     dcc.Location(id='url', refresh=False),
 
-    html.Img(src='data:image/png;base64,{}'.format(crisprsurf_logo_image), width = '50%'),
+    html.Img(src='data:image/png;base64,{}'.format(crisprsurf_logo_image), width = '100%'),
     html.H2('CRISPR Screening Uncharacterized Region Function'),
 
     dcc.Tabs(
@@ -2912,7 +3084,6 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
     #     mode = 'markers',
     #     ), 1, 1)
 
-
     for replicate in replicates:
 
         fig.append_trace(go.Scattergl(
@@ -2966,29 +3137,6 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
 
     boundaries.append(len(indices_filt))
 
-    for i in range(len(boundaries) - 1):
-        start_index, stop_index = boundaries[i], boundaries[i + 1]
-
-        fig.append_trace(go.Scatter(
-            x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
-            y=[0] + power_filt[start_index:stop_index] + [0],
-            mode = 'lines',
-            fill='tozeroy',
-            showlegend=False,
-            # yaxis = 'y2',
-            line=dict(color='rgb(255,165,0)')), 2, 1)
-
-    for i in range(len(boundaries) - 1):
-        start_index, stop_index = boundaries[i], boundaries[i + 1]
-
-        fig.append_trace(go.Scatter(
-            x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1], y=[0] + y_p_filt[start_index:stop_index] + [0],
-            mode = 'lines',
-            fill='tozeroy',
-            yaxis = 'y4',
-            showlegend=False,
-            line=dict(color='rgb(169,169,169)')), 3, 1)
-
     # Find indices with significant padj-values
     fdr = float(param_dict['fdr'])
     significant_boundary_indices = []
@@ -3024,7 +3172,15 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
                 x=[genomic_boundary_start, genomic_boundary_stop],
                 y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
                 mode = 'lines',
-                # fill='tozeroy',
+                fill='tozeroy',
+                showlegend=False,
+                yaxis = 'y2',
+                line=dict(color='rgb(255,204,204)', width = 5)), 3, 1)
+
+            fig.append_trace(go.Scatter(
+                x=[genomic_boundary_start, genomic_boundary_stop],
+                y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+                mode = 'lines',
                 showlegend=False,
                 yaxis = 'y2',
                 line=dict(color='rgb(255,0,0)', width = 5)), 3, 1)
@@ -3033,10 +3189,101 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
                 x=[genomic_boundary_start, genomic_boundary_stop],
                 y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
                 mode = 'lines',
-                # fill='tozeroy',
+                fill='tozeroy',
+                showlegend=False,
+                yaxis = 'y2',
+                line=dict(color='#bbddff', width = 5)), 3, 1)
+
+            fig.append_trace(go.Scatter(
+                x=[genomic_boundary_start, genomic_boundary_stop],
+                y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
+                mode = 'lines',
                 showlegend=False,
                 yaxis = 'y2',
                 line=dict(color='rgb(30,144,255)', width = 5)), 3, 1)
+
+    for i in range(len(boundaries) - 1):
+        start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+        fig.append_trace(go.Scatter(
+            x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+            y=[0] + power_filt[start_index:stop_index] + [0],
+            mode = 'lines',
+            fill='tozeroy',
+            showlegend=False,
+            # yaxis = 'y2',
+            line=dict(color='rgb(255,165,0)')), 2, 1)
+
+    for i in range(len(boundaries) - 1):
+        start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+        fig.append_trace(go.Scatter(
+            x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1], y=[0] + y_p_filt[start_index:stop_index] + [0],
+            mode = 'lines',
+            fill='tozeroy',
+            yaxis = 'y4',
+            showlegend=False,
+            line=dict(color='rgb(169,169,169)')), 3, 1)
+
+    # # Find indices with significant padj-values
+    # fdr = float(param_dict['fdr'])
+    # significant_boundary_indices = []
+    # padj_list = []
+    # for padj in df2['Pval_adj.']:
+    #     try:
+    #         padj_list.append(float(padj))
+    #     except:
+    #         padj_list.append(0)
+
+    # for i in range(len(boundaries) - 1):
+    #     start_index, stop_index = boundaries[i], boundaries[i + 1]
+    #     significant_indices = [1 if x < fdr else 0 for x in padj_list[start_index:stop_index]]
+    #     significant_boundary_indices_tmp = [j + start_index for j, k in enumerate(np.diff([0] + significant_indices)) if k != 0]
+
+    #     if len(significant_boundary_indices_tmp)%2 == 1:
+    #         significant_boundary_indices_tmp.append(stop_index - 1)
+
+    #     significant_boundary_indices += significant_boundary_indices_tmp
+
+    # for i, j in zip(significant_boundary_indices[0::2], significant_boundary_indices[1::2]):
+
+    #     boundary_start = int(i)
+    #     boundary_stop = int(j)
+
+    #     genomic_boundary_start = int(df2['Index'][boundary_start])
+    #     genomic_boundary_stop = int(df2['Index'][boundary_stop])
+
+    #     signal_mean = np.mean(df2['Beta'][boundary_start:boundary_stop])
+
+    #     if signal_mean > np.median(df2['Beta']):
+    #         fig.append_trace(go.Scatter(
+    #             x=[genomic_boundary_start, genomic_boundary_stop],
+    #             y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+    #             mode = 'lines',
+    #             fill='tozeroy',
+    #             # fillcolor = 'rgb(255,204,204)',
+    #             showlegend=False,
+    #             yaxis = 'y2',
+    #             line=dict(color='rgb(255,204,204)', width = 5)), 3, 1)
+
+    #         fig.append_trace(go.Scatter(
+    #             x=[genomic_boundary_start, genomic_boundary_stop],
+    #             y=[max(y_p_filt) + 0.01, max(y_p_filt) + 0.01],
+    #             mode = 'lines',
+    #             # fill='tozeroy',
+    #             fillcolor = 'rgb(255,0,0)',
+    #             showlegend=False,
+    #             yaxis = 'y2',
+    #             line=dict(color='rgb(255,0,0)', width = 5)), 3, 1)
+    #     else:
+    #         fig.append_trace(go.Scatter(
+    #             x=[genomic_boundary_start, genomic_boundary_stop],
+    #             y=[min(y_p_filt) - 0.01, min(y_p_filt) - 0.01],
+    #             mode = 'lines',
+    #             fill='tozeroy',
+    #             showlegend=False,
+    #             yaxis = 'y2',
+    #             line=dict(color='rgb(30,144,255)', width = 5)), 3, 1)
 
     try:
         start = int(start)

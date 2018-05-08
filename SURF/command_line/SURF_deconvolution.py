@@ -159,14 +159,14 @@ else:
 logger.info('Finished argument handling and setting defaults when necessary ...')
 
 ##### Check if sgRNA summary csv exists, load dataframe and make sure formatting is correct
-try:
-	df = pd.read_csv(sgRNA_summary_file)
-	required_columns = ['Chr', 'Start', 'Stop', 'Perturbation_Index', 'sgRNA_Sequence', 'Strand', 'sgRNA_Type', 'Log2FC_Replicate1']
-	df_columns = df.columns.tolist()
+# try:
+df = pd.read_csv(sgRNA_summary_file)
+required_columns = ['Chr', 'Start', 'Stop', 'Perturbation_Index', 'sgRNA_Sequence', 'Strand', 'sgRNA_Type', 'Log2FC_Replicate1']
+df_columns = df.columns.tolist()
 
-except:
-	logger.error('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNA_summary_file)
-	sys.exit('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNA_summary_file)
+# except:
+# 	logger.error('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNA_summary_file)
+# 	sys.exit('The input sgRNA summary file named %s does not exist and cannot be opened. Please make sure the specified location and file name is correct ...' % sgRNA_summary_file)
 
 if '.csv' not in sgRNA_summary_file:
 	logger.error('Please make sure input sgRNA summary file is in .CSV format ...')

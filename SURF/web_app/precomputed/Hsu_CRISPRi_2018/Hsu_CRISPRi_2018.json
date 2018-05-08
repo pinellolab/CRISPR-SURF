@@ -1,1 +1,1 @@
-{"title": "Hsu, JY. et al. 2018","description": "tmp","command_used": "tmp","pert": "crispri","pert_l": 200,"scale": 20,"limit": 300,"fdr": 0.05}
+{"title": "Hsu, JY. et al. 2018","description": "CRISPRi tiling of DHSs near BCL11A locus for enhancer discovery.","perturbation": "crispri","range": 200,"scale": 20,"fdr": 0.05}

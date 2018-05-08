@@ -1,1 +1,1 @@
-{"title": "Simeonov, D. et al. 2017","description": "tmp","command_used": "tmp","pert": "crispra","pert_l": 200,"scale": 20,"limit": 300,"fdr": 0.05}
+{"title": "Simeonov and Gowen et al. 2017","description": "CRISPRa tiling of IL2RA locus for enhancer discovery.","perturbation": "crispra","range": 200,"scale": 20,"fdr": 0.05}

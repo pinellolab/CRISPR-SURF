@@ -1,4 +1,6 @@
 ### CRISPR-SURF Functions for Dash Web Application ###
+pymin = min
+pyabs = abs
 import math
 import numpy as np
 import pandas as pd
@@ -807,6 +809,8 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	gammas2betas['p'] = list(beta_pvals)
 	gammas2betas['padj'] = list(beta_pvals_adj)
 
+	new_p_cutoff = beta_pvals[pymin(range(len(beta_pvals_adj)), key=lambda i: pyabs(beta_pvals_adj[i] - float(padj_cutoffs[0])))]
+
 	# Estimate statistical power
 	beta_statistical_power = []
 	if scale > 1:
@@ -820,7 +824,7 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 		for i in range(len(beta_corrected_effect_size)):
 
 			shifted_distribution = [x + beta_corrected_effect_size[i] for x in beta_distributions_null[i]]
-			percentile_cutoff = np.percentile(beta_distributions_null[i], (100.0 - float(padj_cutoffs[0])*100.0/2.0))
+			percentile_cutoff = np.percentile(beta_distributions_null[i], (100.0 - float(new_p_cutoff)*100.0/2.0))
 			if (i + 1)%100 == 0:
 				print 'Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions))
 				# logger.info('Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
@@ -829,7 +833,7 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 
 	else:
 
-		percentile_cutoff = np.percentile(null_betas, (100.0 - float(padj_cutoffs[0])*100.0/2.0))
+		percentile_cutoff = np.percentile(null_betas, (100.0 - float(new_p_cutoff)*100.0/2.0))
 		for i in range(len(beta_corrected_effect_size)):
 
 			for j in range(len(null_betas)):

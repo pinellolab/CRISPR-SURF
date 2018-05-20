@@ -192,33 +192,33 @@ app.layout = html.Div([
 	# dcc.Interval(id='common-interval-3', interval=1000000),
 	# dcc.Interval(id='common-interval-4', interval=1000000),
 
-	html.Div(id = 'custom-loading-states-1',
-		children = [
+	# html.Div(id = 'custom-loading-states-1',
+	# 	children = [
 
-		html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
+	# 	html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
 
-		], style = {'display':'none'}),
+	# 	], style = {'display':'none'}),
 
-	html.Div(id = 'custom-loading-states-2',
-		children = [
+	# html.Div(id = 'custom-loading-states-2',
+	# 	children = [
 
-		html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
+	# 	html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
 
-		], style = {'display':'none'}),
+	# 	], style = {'display':'none'}),
 
-	html.Div(id = 'custom-loading-states-3',
-		children = [
+	# html.Div(id = 'custom-loading-states-3',
+	# 	children = [
 
-		html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
+	# 	html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
 
-		], style = {'display':'none'}),
+	# 	], style = {'display':'none'}),
 
-	html.Div(id = 'custom-loading-states-4',
-		children = [
+	# html.Div(id = 'custom-loading-states-4',
+	# 	children = [
 
-		html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
+	# 	html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
 
-		], style = {'display':'none'}),
+	# 	], style = {'display':'none'}),
 
 	html.Img(src='data:image/png;base64,{}'.format(crisprsurf_logo_image), width = '100%'),
 	html.H2('CRISPR Screening Uncharacterized Region Function'),
@@ -3207,12 +3207,12 @@ app3.layout = html.Div([
 
     dcc.Interval(id='common-interval-1', interval=1000000),
 
-    html.Div(id = 'custom-loading-states-1',
-        children = [
+    # html.Div(id = 'custom-loading-states-1',
+    #     children = [
 
-        html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
+    #     html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
 
-        ], style = {'display':'none'}),
+    #     ], style = {'display':'none'}),
 
     html.Img(src='data:image/png;base64,{}'.format(crisprsurf_logo_image), width = '100%'),
     html.H2('CRISPR Screening Uncharacterized Region Function'),
@@ -3766,9 +3766,6 @@ def download_file(n_clicks, bed_data, pathname):
     else:
         return 'Upload Status: Incomplete'
 
-
-
-
 @app3.callback(
     Output('sgRNA-design', 'children'),
     [Input('pams', 'value'),
@@ -3886,7 +3883,7 @@ def update_time_estimate(trigger1, trigger2, pams_trigger, pams, pathname):
         else:
             pams = [pams.upper()]
 
-        estimate_simulation_time = 3.0*float(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))/60.0*float(len(pams))
+        estimate_simulation_time = float(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))/60.0*float(len(pams))
 
         if estimate_simulation_time >= 1:
             return 'Estimated Time: %s Minutes' % "{0:.2f}".format(estimate_simulation_time)
@@ -4079,7 +4076,7 @@ def update_container(n_clicks, significance_container, pams, pathname):
 
     # First time analysis
     if n_clicks == data_dict3['checkbutton']:
-        return max(1500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams), 5000)
+        return max(500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams), 5000)
 
     else:
         return 2000000000
@@ -4127,7 +4124,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
         df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
         df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
         df = df[df['chr'] == chrom]
-        sgRNA_start_indices['total'] = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
+        sgRNA_start_indices['PAMs Combined'] = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
         
         pam_classes = set(df['pam_class'])
         for pam_class in pam_classes:
@@ -4138,22 +4135,23 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
             diffs = sorted(np.diff(sgRNA_start_indices[pam_class]))[:-len(df2.index)]
             x_cumsum = np.sort(diffs)
             y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
-            fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, name = pam_class, showlegend=True), 1, 1)
+            fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, name = pam_class + ' CDF', showlegend=True), 1, 1)
 
-            if pam_class != 'total':
+        for pam_class in sgRNA_start_indices:
+            if pam_class != 'PAMs Combined':
                 fig.append_trace(go.Scattergl(
                     x=sgRNA_start_indices[pam_class],
                     y=[1]*len(sgRNA_start_indices[pam_class]),
                     mode = 'markers',
                     showlegend = True,
-                    name = pam_class,
+                    name = pam_class + ' sgRNAs',
                     yaxis = 'y2',
-                    marker=dict(symbol='triangle-down', size = 5)), 1, 2)
+                    marker=dict(symbol='triangle-down', size = 10)), 1, 2)
 
         profile = {}
         if modality == 'cas':
-            for i in range(len(sgRNA_start_indices['total'])):
-                for index, value in zip([x+sgRNA_start_indices['total'][i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
+            for i in range(len(sgRNA_start_indices['PAMs Combined'])):
+                for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
                     if index in profile:
                         profile[index].append(value)
                     else:
@@ -4169,8 +4167,8 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 line=dict(color='grey', width = 0)), 1, 2)
 
         else:
-            for i in range(len(sgRNA_start_indices['total'])):
-                for index, value in zip([x+sgRNA_start_indices['total'][i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
+            for i in range(len(sgRNA_start_indices['PAMs Combined'])):
+                for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
                     index = int(math.ceil(index/20.0))*20
                     if index in profile:
                         profile[index].append(value)
@@ -4221,7 +4219,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 height=500,
                 autosize = True,
                 xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
-                xaxis2={'domain':[0.3, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
+                xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
                 yaxis={'title': 'Cumulative Fraction'},
                 yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
                 hovermode='closest')
@@ -4231,7 +4229,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 height=500,
                 autosize = True,
                 xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
-                xaxis2={'domain':[0.3, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
+                xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
                 yaxis={'title': 'Cumulative Fraction'},
                 yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
                 hovermode='closest')
@@ -4246,33 +4244,43 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
 
         start_time = time.time()
 
+        sb.call('rm %s/design_flag.txt' % RESULTS_FOLDER, shell = True)
+
         fig = tools.make_subplots(rows=1, cols=2, specs=[[{}, {}]],
                                   shared_xaxes=False, shared_yaxes=False)
 
+        sgRNA_start_indices = {}
         df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
-        df = df[df['chr'] == chrom]
-        sgRNA_start_indices = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
         df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
+        df = df[df['chr'] == chrom]
+        sgRNA_start_indices['PAMs Combined'] = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
+        
+        pam_classes = set(df['pam_class'])
+        for pam_class in pam_classes:
+            df_tmp = df[df['pam_class'] == pam_class]
+            sgRNA_start_indices[pam_class] = sorted([int(x) for x in (df_tmp['start'] + df_tmp['stop'])/2.0])
 
-        diffs = sorted(np.diff(sgRNA_start_indices))[:-len(df2.index)]
+        for pam_class in sgRNA_start_indices:
+            diffs = sorted(np.diff(sgRNA_start_indices[pam_class]))[:-len(df2.index)]
+            x_cumsum = np.sort(diffs)
+            y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
+            fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, name = pam_class + ' CDF', showlegend=True), 1, 1)
 
-        x_cumsum = np.sort(diffs)
-        y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
-
-        fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, showlegend=False), 1, 1)
-
-        fig.append_trace(go.Scattergl(
-            x=sgRNA_start_indices,
-            y=[1]*len(sgRNA_start_indices),
-            mode = 'markers',
-            showlegend=False,
-            yaxis = 'y2',
-            marker=dict(symbol='triangle-down', size = 5)), 1, 2)
+        for pam_class in sgRNA_start_indices:
+            if pam_class != 'PAMs Combined':
+                fig.append_trace(go.Scattergl(
+                    x=sgRNA_start_indices[pam_class],
+                    y=[1]*len(sgRNA_start_indices[pam_class]),
+                    mode = 'markers',
+                    showlegend = True,
+                    name = pam_class + ' sgRNAs',
+                    yaxis = 'y2',
+                    marker=dict(symbol='triangle-down', size = 10)), 1, 2)
 
         profile = {}
         if modality == 'cas':
-            for i in range(len(sgRNA_start_indices)):
-                for index, value in zip([x+sgRNA_start_indices[i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
+            for i in range(len(sgRNA_start_indices['PAMs Combined'])):
+                for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
                     if index in profile:
                         profile[index].append(value)
                     else:
@@ -4288,8 +4296,8 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 line=dict(color='grey', width = 0)), 1, 2)
 
         else:
-            for i in range(len(sgRNA_start_indices)):
-                for index, value in zip([x+sgRNA_start_indices[i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
+            for i in range(len(sgRNA_start_indices['PAMs Combined'])):
+                for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
                     index = int(math.ceil(index/20.0))*20
                     if index in profile:
                         profile[index].append(value)
@@ -4340,9 +4348,9 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 height=500,
                 autosize = True,
                 xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
-                xaxis2={'domain':[0.3, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
+                xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
                 yaxis={'title': 'Cumulative Fraction'},
-                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs'], 'range':[-0.6, 1.1]},
+                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
                 hovermode='closest')
 
         except:
@@ -4350,9 +4358,9 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 height=500,
                 autosize = True,
                 xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
-                xaxis2={'domain':[0.3, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
+                xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
                 yaxis={'title': 'Cumulative Fraction'},
-                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs'], 'range':[-0.6, 1.1]},
+                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
                 hovermode='closest')
 
         stop_time = time.time()

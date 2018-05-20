@@ -35,7 +35,11 @@ RUN pip install dash-table-experiments
 RUN pip install gunicorn
 
 # install zips
-RUN apt-get update && apt-get install zip -y
+RUN apt-get update && apt-get install zip zlib1g liblzo2-dev -y
+
+#new dependencies
+RUN pip install bx-python
+RUN git clone https://github.com/lucapinello/bioutilities.git && cd bioutilities/ && python setup.py install
 
 # create environment
 COPY SURF /SURF

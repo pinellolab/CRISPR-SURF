@@ -6,6 +6,7 @@ import dash_html_components as html
 import dash_table_experiments as dt
 import plotly.graph_objs as go
 from plotly import tools
+import plotly.figure_factory as ff
 from flask import Flask, request, redirect, url_for, render_template, jsonify, send_from_directory, send_file, session
 import requests
 import re
@@ -26,6 +27,7 @@ import cPickle as cp
 import csv
 import time
 import io
+import math
 
 # Import CRISPR-SURF Functions
 from CRISPR_SURF_Core_WebApp import gaussian_pattern, crispr_surf_deconvolution, crispr_surf_find_gamma, crispr_surf_deconvolved_signal, crispr_surf_statistical_significance, crispr_surf_sgRNA_summary_table_update, complete_beta_profile, crispr_surf_significant_regions, crispr_surf_IGV, str2bool, reverse_complement, total_count_normalization, median_normalization, normalize_sgRNA_counts
@@ -92,6 +94,8 @@ app.scripts.config.serve_locally = True
 
 app2 = Dash_responsive(name = 'crisprsurf-app-precomputed', server = server, url_base_pathname = '/precomputed/', csrf_protect=False)
 
+app3 = Dash_responsive(name = 'crisprsurf-app-design', server = server, url_base_pathname = '/design/', csrf_protect=False)
+
 app.server.config['UPLOADS_FOLDER']='/tmp/UPLOADS_FOLDER'
 app.server.config['RESULTS_FOLDER']='/tmp/RESULTS_FOLDER'
 app.server.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024 #200 Mb max
@@ -126,6 +130,8 @@ def index():
 
     data_dict2 = {'gammas2betas':None, 'computed':False, 'fdr':0.05}
 
+    data_dict3 = {'design-clicks':0, 'checkbutton':1, 'pams':['']}
+
     with open(UPLOADS_FOLDER + '/params.json', 'w') as f:
         json_string = json.dumps(param_dict)
         f.write(json_string + '\n')
@@ -136,6 +142,10 @@ def index():
 
     with open(UPLOADS_FOLDER + '/data2.json', 'w') as f:
         json_string = json.dumps(data_dict2)
+        f.write(json_string + '\n')
+
+    with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+        json_string = json.dumps(data_dict3)
         f.write(json_string + '\n')
 
     return render_template('index.html',newpath=newpath)
@@ -3181,6 +3191,1043 @@ def update_link(dataset):
 def generate_report_url2(directory):
 
     return send_file('/SURF/web_app/precomputed/%s/SURF_result/igv_session.zip' % (directory), attachment_filename = 'igv_session.zip', as_attachment = True)
+
+### DESIGN PAGE
+app3.layout = html.Div([
+
+    dcc.Location(id='url', refresh=False),
+
+    dcc.Interval(id='common-interval-1', interval=1000000),
+
+    html.Div(id = 'custom-loading-states-1',
+        children = [
+
+        html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
+
+        ], style = {'display':'none'}),
+
+    html.Img(src='data:image/png;base64,{}'.format(crisprsurf_logo_image), width = '100%'),
+    html.H2('CRISPR Screening Uncharacterized Region Function'),
+
+    dcc.Tabs(
+        tabs=[
+            {'label': 'Step 1: Upload Regions and Set Parameters', 'value': 'upload'},
+            {'label': 'Step 2: Design and Visualize sgRNAs', 'value': 'visualize'},
+            {'label': 'Step 3: Download sgRNA Library', 'value': 'download'},
+        ],
+        value='upload',
+        id='tabs',
+        style = {'font-weight':'bold'}
+    ),
+
+    html.Div(id = 'upload-container-total', children = [
+
+        html.Div([
+
+            # Drag and Drop upload component
+            html.H3('Upload Target Regions'),
+
+            html.Hr(),
+
+            html.Label(id = 'upload-log', children = 'Upload Status: Incomplete', style = {'font-weight':'bold'}),
+
+            html.Label('Supported File Formats: .csv and .xls', style = {'font-weight':'bold'}),
+
+            dcc.Upload(
+                id='upload-data',
+                children=html.Div([
+                    'Drag and Drop or ',
+                    html.A('Select Files')
+                ], style = {'font-weight':'bold', 'font-size': 20}),
+                style={
+                    'width': '100%',
+                    'height': '100px',
+                    'lineHeight': '100px',
+                    'borderWidth': '2px',
+                    'borderStyle': 'dashed',
+                    'borderRadius': '5px',
+                    'textAlign': 'center',
+                },
+                multiple=False),
+
+            ], className = 'six columns'),
+
+        html.Div([
+
+            html.H3('Parameters'),
+
+            html.Hr(),
+
+            html.Label('Genome', style = {'font-weight':'bold'}),
+            dcc.Dropdown(
+                id = 'genome',
+                options=[
+                    {'label': 'hg19', 'value': 'hg19'},
+                    {'label': 'hg38', 'value': 'hg38'},
+                    {'label': 'mm9', 'value': 'mm9'},
+                    {'label': 'mm10', 'value': 'mm10'},
+                    ],
+                    value = 'hg19',
+                ),
+
+            html.Br(),
+
+            html.Div([
+
+                html.Div([
+
+                    html.Label('PAMs', style = {'font-weight':'bold'}),
+                    dcc.Input(
+                        id = 'pams',
+                        type = 'text',
+                        placeholder='i.e. [ATCG]GG,TTT[ACG]',
+                        value = None
+                        ),
+
+                    html.Label('sgRNA Length', style = {'font-weight':'bold'}),
+                    dcc.Input(
+                        id = 'sgRNA_length',
+                        type = 'number',
+                        value = 20
+                        ),
+
+                    html.Label('Spacer Orientation', style = {'font-weight':'bold'}),
+                    dcc.Dropdown(
+                        id = 'orientation',
+                        options=[
+                            {'label': 'Left of PAM', 'value': 'left'},
+                            {'label': 'Right of PAM', 'value': 'right'},
+                            ],
+                            value = 'left',
+                        ),
+
+                    html.Label("5' G Constraint", style = {'font-weight':'bold'}),
+                    dcc.Dropdown(
+                        id = 'g_constraint',
+                        options=[
+                            {'label': 'Yes', 'value': True},
+                            {'label': 'No', 'value': False},
+                            ],
+                            value = False,
+                        ),
+
+                    ], className = 'six columns'),
+
+                html.Div([
+
+                    html.Label("sgRNA Designs (5' to 3')", style = {'font-weight':'bold'}),
+                    html.Label(id = 'sgRNA-design'),
+
+                    ], className = 'six columns'),
+
+
+                ], className = 'row'),
+
+
+            ], className = 'six columns'),
+
+        ], className = 'row', style = {'display':'none'}),
+
+    html.Div(id = 'design-notification-container-total', children = [html.H2('Please Complete Step 1')], style = {'display':'none'}),
+
+    html.Div(id = 'design-container-total', children = [
+
+        html.Div(id = 'custom-loading-states-1',
+            children = [
+
+            html.Div(id = 'custom-loading-state1', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
+
+            ], style = {'display':'none'}),
+
+        html.H3('Design and Visualize sgRNAs'),
+
+        html.Button('Design sgRNAs', id='design-button', n_clicks = 0),
+
+        html.Label(id = 'time-estimate', children = 'Time Estimate: NA', style = {'font-weight':'bold'}),
+
+        html.Hr(),
+
+        html.Div([
+
+            html.Div(id = 'design-container', children = [
+
+                html.Div([
+
+                    html.Div([
+
+                        html.Div([
+
+                            html.Div([
+
+                                html.Label('Chr', style = {'font-weight':'bold'}),
+                                dcc.Dropdown(
+                                    id = 'chr',
+                                    options=[],
+                                    value = None
+                                ),
+
+                                ], className = 'two columns'),
+
+                            html.Div([
+
+                                html.Label('Start', style = {'font-weight':'bold'}),
+                                dcc.Input(
+                                    id = 'start',
+                                    type = 'text',
+                                    placeholder='Enter Start Coordinate ...',
+                                    ),
+
+                                ], className = 'two columns', style = {'text-align':'center'}),
+
+                            html.Div([
+
+                                html.Label('Stop', style = {'font-weight':'bold'}),
+                                dcc.Input(
+                                    id = 'stop',
+                                    type = 'text',
+                                    placeholder='Enter Stop Coordinate ...',
+                                    ),
+
+                                ], className = 'two columns', style = {'text-align':'center'}),
+
+                            html.Div([
+
+                                html.Label('Screen Type', style = {'font-weight':'bold'}),
+                                dcc.Dropdown(
+                                    id = 'modality',
+                                    options=[
+                                        {'label': 'CRISPR-Cas', 'value': 'cas'},
+                                        {'label': 'CRISPRi', 'value': 'crispri'},
+                                        {'label': 'CRISPRa', 'value': 'crispra'}
+                                            ],
+                                            value = 'cas',
+                                        ),
+
+                                ], className = 'three columns', style = {'text-align':'center'}),
+
+                            html.Div([
+
+                                html.Br(),
+
+                                html.Button(id = 'update-design-plot', children = 'Update Graph'),
+
+                                ], className = 'three columns', style = {'text-align':'left'}),
+
+                            ], className = 'row'),
+
+                        ], className = 'twelve columns'),
+
+                    ], className = 'row'),
+
+                ], style = {'display': 'none'}),
+
+            dcc.Graph(id='design-plot', animate=False),
+
+            ])
+
+        ], style = {'display':'none'}),
+
+    html.Div(id = 'download-notification-container-total', children = [html.H2('Please Complete Steps 1 and 2')], style = {'display':'none'}),
+
+    html.Div(
+        id = 'download-container-total',
+        children = [
+
+        html.H3('Download sgRNA Library'),
+
+        html.Hr(),
+
+        html.Div([
+
+            html.A(
+                html.Button('Download Files'),
+                id='download-total',
+                download = "surf-design.zip",
+                href="",
+                target="_blank",
+                n_clicks = 0,
+                style = {'font-weight':'bold', 'font-size':'100%', 'text-align':'center'}
+                ),
+
+            ]),
+
+        ], style = {'display':'none'}),
+
+
+    html.Br(),
+    html.Br(),
+
+    html.Div(id = 'tmp1', style = {'display':'none'}),
+    html.Div(id = 'tmp2', style = {'display':'none'}),
+    html.Div(id = 'tmp3', style = {'display':'none'}),
+    html.Div(id = 'tmp4', style = {'display':'none'}),
+    html.Div(id = 'tmp5', style = {'display':'none'}),
+    html.Div(id = 'tmp6', style = {'display':'none'}),
+    html.Div(id = 'tmp7', style = {'display':'none'}),
+    html.Div(id = 'tmp8', style = {'display':'none'}),
+    html.Div(id = 'tmp9', style = {'display':'none'}),
+    html.Div(id = 'tmp10', style = {'display':'none'}),
+
+    ])
+
+# Pseudo tabs code
+@app3.callback(
+    Output('upload-container-total', 'style'),
+    [Input('tabs', 'value')],
+    state = [State('url', 'pathname')])
+
+def display_content(value, pathname):
+
+    if value == 'upload':
+        return {'display':'block'}
+    else:
+        return {'display':'none'}
+
+@app3.callback(
+    Output('design-container-total', 'style'),
+    [Input('tabs', 'value')],
+    state = [State('url', 'pathname')])
+
+def display_content(value, pathname):
+
+    if pathname:
+
+        UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+        # hack
+        json_good = False
+        while not json_good:
+            with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+                json_string = f.readline().strip()
+                try:
+                    data_dict3 = json.loads(json_string)
+                    json_good = True
+                except:
+                    pass
+
+        if value == 'visualize':
+            if os.path.exists(UPLOADS_FOLDER + '/target_regions.csv') and ('badpam' not in data_dict3['pams']) and (data_dict3['pams'][0] != ''):
+                return {'display':'block'}
+            else:
+                return {'display':'none'}
+        else:
+            return {'display':'none'}
+
+    else:
+        return {'display':'none'}
+
+@app3.callback(
+    Output('design-notification-container-total', 'style'),
+    [Input('tabs', 'value')],
+    state = [State('url', 'pathname')])
+
+def display_content(value, pathname):
+
+    if pathname:
+
+        UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+        # hack
+        json_good = False
+        while not json_good:
+            with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+                json_string = f.readline().strip()
+                try:
+                    data_dict3 = json.loads(json_string)
+                    json_good = True
+                except:
+                    pass
+
+        if value == 'visualize':
+            if os.path.exists(UPLOADS_FOLDER + '/target_regions.csv') and ('badpam' not in data_dict3['pams']) and (data_dict3['pams'][0] != ''):
+                return {'display':'none'}
+            else:
+                return {'display':'block'}
+        else:
+            return {'display':'none'}
+
+    else:
+        return {'display':'none'}
+
+@app3.callback(
+    Output('download-container-total', 'style'),
+    [Input('tabs', 'value')],
+    state = [State('url', 'pathname')])
+
+def display_content(value, pathname):
+
+    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+    if value == 'download':
+        if os.path.exists(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv'):
+            return {'display':'block'}
+        else:
+            return {'display':'none'}
+    else:
+        return {'display':'none'}
+
+@app3.callback(
+    Output('download-notification-container-total', 'style'),
+    [Input('tabs', 'value')],
+    state = [State('url', 'pathname')])
+
+def display_content(value, pathname):
+
+    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+    if value == 'download':
+        if os.path.exists(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv'):
+            return {'display':'none'}
+        else:
+            return {'display':'block'}
+    else:
+        return {'display':'none'}
+
+### CALLBACKS FOR UPLOAD/PARAMETERS
+
+@app3.callback(Output('upload-log', 'children'),
+              [Input('upload-data', 'contents'),
+               Input('upload-data', 'filename'),],
+               state = [State('url', 'pathname')])
+
+def download_file(contents, filename, pathname):
+
+    if pathname:
+
+        UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+        RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+        try:
+            sb.call('rm %s/target_regions.csv' % UPLOADS_FOLDER, shell = True)
+        except:
+            pass
+
+        # hack
+        json_good = False
+        while not json_good:
+            with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+                json_string = f.readline().strip()
+                try:
+                    data_dict3 = json.loads(json_string)
+                    json_good = True
+                except:
+                    pass
+
+        if contents is not None:
+            df = parse_contents(contents, filename)
+            if df is not None:
+
+                if all(x in df.columns for x in ['chr', 'start', 'stop', 'target']):
+                    print len(df.index)
+
+                    df.to_csv(UPLOADS_FOLDER + '/target_regions.csv', index = False)
+
+                    data_dict3['chr'] = [str(x) for x in df['chr']]
+
+                    with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+                        new_json_string = json.dumps(data_dict3)
+                        f.write(new_json_string + '\n')
+
+                    return 'Upload Status: Complete'
+
+                else:
+                    return 'Upload Status: Incomplete (Required Columns - chr, start, stop, target)'
+
+            else:
+                return 'Upload Status: Incomplete (Please upload .csv format)'
+
+        return 'Upload Status: Incomplete'
+
+
+    return 'Upload Status: Incomplete'
+
+@app3.callback(
+    Output('sgRNA-design', 'children'),
+    [Input('pams', 'value'),
+    Input('sgRNA_length', 'value'),
+    Input('orientation', 'value'),
+    Input('g_constraint', 'value')],
+    state = [State('url', 'pathname')])
+
+def update_sgRNA_design(pams, sgRNA_length, orientation, g_constraint, pathname):
+
+    UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+    if pams is not None and pams != '':
+
+        if ',' in pams:
+            if ' ' in pams:
+                pams = [pam.upper() for pam in pams.split(', ')]
+            else:
+                pams = [pam.upper() for pam in pams.split(',')]
+        elif ' ' in pams:
+            pams = [pam.upper() for pam in pams.split()]
+        else:
+            pams = [pams.upper()]
+
+        sgRNA_designs = []
+        pam_list = []
+        if orientation == 'left':
+            if g_constraint:
+                for pam_n in range(len(pams)):
+                    if not all(x in ['A', 'T', 'C', 'G', '[', ']'] for x in set(list(pams[pam_n]))):
+                        sgRNA_designs.append('PAM %s: This PAM contains characters outside of [ATCG] ...' % (pam_n + 1))
+                        pam_list.append('badpam')
+                    else:
+                        sgRNA_designs.append('PAM %s: G' % (pam_n + 1) + 'N'*(sgRNA_length - 1) + pams[pam_n].upper())
+                        pam_list.append(pams[pam_n].upper())
+            else:
+                for pam_n in range(len(pams)):
+                    if not all(x in ['A', 'T', 'C', 'G', '[', ']'] for x in set(list(pams[pam_n]))):
+                        sgRNA_designs.append('PAM %s: This PAM contains characters outside of [ATCG] ...' % (pam_n + 1))
+                        pam_list.append('badpam')
+                    else:
+                        sgRNA_designs.append('PAM %s: ' % (pam_n + 1) + 'N'*(sgRNA_length) + pams[pam_n].upper())
+                        pam_list.append(pams[pam_n].upper())
+
+        elif orientation == 'right':
+            if g_constraint:
+                for pam_n in range(len(pams)):
+                    if not all(x in ['A', 'T', 'C', 'G', '[', ']'] for x in set(list(pams[pam_n]))):
+                         sgRNA_designs.append('PAM %s: This PAM contains characters outside of [ATCG] ...' % (pam_n + 1))
+                         pam_list.append('badpam')
+                    else:
+                        sgRNA_designs.append('PAM %s: ' % (pam_n + 1) + pams[pam_n].upper() + 'G' + 'N'*(sgRNA_length - 1))
+                        pam_list.append(pams[pam_n].upper())
+            else:
+                for pam_n in range(len(pams)):
+                    if not all(x in ['A', 'T', 'C', 'G', '[', ']'] for x in set(list(pams[pam_n]))):
+                         sgRNA_designs.append('PAM %s: This PAM contains characters outside of [ATCG] ...' % (pam_n + 1))
+                         pam_list.append('badpam')
+                    else:
+                        sgRNA_designs.append('PAM %s: ' % (pam_n + 1) + pams[pam_n].upper() + 'N'*(sgRNA_length))
+                        pam_list.append(pams[pam_n].upper())
+
+        displays = [html.Label(sgRNA, style = {'font-size':12}) for sgRNA in sgRNA_designs]
+
+        # hack
+        json_good = False
+        while not json_good:
+            with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+                json_string = f.readline().strip()
+                try:
+                    data_dict3 = json.loads(json_string)
+                    json_good = True
+                except:
+                    pass
+
+        data_dict3['pams'] = pam_list
+
+        with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+            new_json_string = json.dumps(data_dict3)
+            f.write(new_json_string + '\n')
+
+        return displays
+
+    return html.Label('Please input PAMs to the left ...')
+
+### CALLBACKS FOR DESIGN AND VISUALIZATION
+@app3.callback(
+    Output('time-estimate', 'children'),
+    [Input('tabs', 'value')],
+    state = [State('pams', 'value'),
+    State('url', 'pathname')])
+
+def update_time_estimate(data, pams, pathname):
+
+    UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+    try:
+        df = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv')
+        bp_tiled = 0
+        for index, row in df.iterrows():
+            bp_tiled += (row['stop'] - row['start'])
+
+        if ',' in pams:
+            if ' ' in pams:
+                pams = [pam.upper() for pam in pams.split(', ')]
+            else:
+                pams = [pam.upper() for pam in pams.split(',')]
+        elif ' ' in pams:
+            pams = [pam.upper() for pam in pams.split()]
+        else:
+            pams = [pams.upper()]
+
+        estimate_simulation_time = 3.0*float(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))/60.0*float(len(pams))
+
+        if estimate_simulation_time >= 1:
+            return 'Estimated Time: %s Minutes' % "{0:.2f}".format(estimate_simulation_time)
+
+        else:
+            return 'Estimated Time: %s Seconds' % "{0:.2f}".format(estimate_simulation_time*60.0)
+
+    except: 
+        return  'Estimated Time: Not Available'
+
+
+@app3.callback(
+    Output('chr', 'options'),
+    [Input('design-plot', 'figure')],
+    state = [State('url', 'pathname')])
+
+def update_chr(figure, pathname):
+
+    UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+    # hack
+    json_good = False
+    while not json_good:
+        with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+            json_string = f.readline().strip()
+            try:
+                data_dict3 = json.loads(json_string)
+                json_good = True
+            except:
+                pass
+
+    unique_chr = set(data_dict3['chr'])
+
+    return [{'label':entry, 'value':entry} for entry in unique_chr]
+
+@app3.callback(Output('chr', 'value'),
+              [Input('upload-log', 'children')],
+              state = [State('url', 'pathname')])
+
+def initialize_chr(log_val, pathname):
+
+    UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+    # hack
+    json_good = False
+    while not json_good:
+        with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+            json_string = f.readline().strip()
+            try:
+                data_dict3 = json.loads(json_string)
+                json_good = True
+            except:
+                pass
+
+    if log_val == 'Upload Status: Complete':
+        return data_dict3['chr'][0]
+
+    else:
+        return 'chr1'
+
+@app3.callback(
+    Output('tmp1', 'style'),
+    [Input('design-button', 'n_clicks')],
+    state=[State('genome', 'value'),
+    State('orientation', 'value'),
+    State('sgRNA_length', 'value'),
+    State('g_constraint', 'value'),
+    State('url', 'pathname')])
+
+def find_regions(n_clicks, genome, orient, guide_l, g_constraint, pathname):
+
+    if n_clicks > 0:
+
+        UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+        RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+        # hack
+        json_good = False
+        while not json_good:
+            with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+                json_string = f.readline().strip()
+                try:
+                    data_dict3 = json.loads(json_string)
+                    json_good = True
+                except:
+                    pass
+
+        pams = ' '.join(map(str, data_dict3['pams']))
+        print pams
+
+        sb.Popen('python /SURF/web_app/SURF_design_webapp.py -f %s -genome %s -pams %s -orient %s -guide_l %s -g_constraint %s -out %s' % (UPLOADS_FOLDER + '/target_regions.csv', '/SURF/web_app/2bit_genomes/%s.2bit' % genome, pams, orient, guide_l, g_constraint, RESULTS_FOLDER), shell = True)
+
+    return {'display': 'none'}
+
+@app3.callback(
+    Output('custom-loading-states-1', 'style'),
+    [Input('design-button', 'n_clicks'),
+    Input('design-container', 'style')],
+    state = [State('url', 'pathname')])
+
+def update_container(n_clicks, significance_container, pathname):
+
+    UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+    # hack
+    json_good = False
+    while not json_good:
+        with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+            json_string = f.readline().strip()
+            try:
+                data_dict3 = json.loads(json_string)
+                json_good = True
+            except:
+                pass
+
+    # First time analysis
+    if n_clicks == data_dict3['checkbutton']:
+        return {'display': 'block'}
+
+    else:
+        return {'display': 'none'}
+
+@app3.callback(
+    Output('design-container', 'style'),
+    [Input('design-plot', 'figure')],
+    state = [State('url', 'pathname')])
+
+def significance_container(fig_update, pathname):
+
+    UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+    # hack
+    json_good = False
+    while not json_good:
+        with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+            json_string = f.readline().strip()
+            try:
+                data_dict3 = json.loads(json_string)
+                json_good = True
+            except:
+                pass
+
+    if data_dict3['design-clicks'] > 0:
+        return {'display': 'block'}
+
+    else:
+        return {'display': 'none'}
+
+@app3.callback(
+    Output('common-interval-1', 'interval'),
+    [Input('design-button', 'n_clicks'),
+    Input('design-container', 'style')],
+    state = [State('pams', 'value'),
+    State('url', 'pathname')])
+
+def update_container(n_clicks, significance_container, pams, pathname):
+
+    UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+    # hack
+    json_good = False
+    while not json_good:
+        with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+            json_string = f.readline().strip()
+            try:
+                data_dict3 = json.loads(json_string)
+                json_good = True
+            except:
+                pass
+
+    df = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv')
+    bp_tiled = 0
+    for index, row in df.iterrows():
+        bp_tiled += (row['stop'] - row['start'])
+
+    if ',' in pams:
+        if ' ' in pams:
+            pams = [pam.upper() for pam in pams.split(', ')]
+        else:
+            pams = [pam.upper() for pam in pams.split(',')]
+    elif ' ' in pams:
+        pams = [pam.upper() for pam in pams.split()]
+    else:
+        pams = [pams.upper()]
+
+    # First time analysis
+    if n_clicks == data_dict3['checkbutton']:
+        return 1500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams)
+
+    else:
+        return 2000000000
+
+@app3.callback(
+    Output('design-plot', 'figure'),
+    [Input('update-design-plot', 'n_clicks'),
+    Input('start','type')],
+    state=[
+    State('chr', 'value'),
+    State('start', 'value'),
+    State('stop', 'value'),
+    State('design-button', 'n_clicks'),
+    State('custom-loading-states-1', 'style'),
+    State('modality', 'value'),
+    State('url', 'pathname')],
+    events=[Event('common-interval-1', 'interval')])
+
+def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop, design_n_clicks, loading_style, modality, pathname):
+
+    UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+    # hack
+    json_good = False
+    while not json_good:
+        with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+            json_string = f.readline().strip()
+            try:
+                data_dict3 = json.loads(json_string)
+                json_good = True
+            except:
+                pass
+
+    if os.path.exists(RESULTS_FOLDER + '/design_flag.txt'):
+
+        start_time = time.time()
+
+        sb.call('rm %s/design_flag.txt' % RESULTS_FOLDER, shell = True)
+
+        fig = tools.make_subplots(rows=1, cols=2, specs=[[{}, {}]],
+                                  shared_xaxes=False, shared_yaxes=False)
+
+        df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
+        df = df[df['chr'] == chrom]
+        sgRNA_start_indices = sorted(df['start'])
+        df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv')
+
+        diffs = sorted(np.diff(sgRNA_start_indices))[:-len(df2.index)]
+
+        x_cumsum = np.sort(diffs)
+        y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
+
+        fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, showlegend=False), 1, 1)
+
+        fig.append_trace(go.Scattergl(
+            x=sgRNA_start_indices,
+            y=[1]*len(sgRNA_start_indices),
+            mode = 'markers',
+            showlegend=False,
+            yaxis = 'y2',
+            marker=dict(symbol='triangle-down', size = 5)), 1, 2)
+
+        profile = {}
+        if modality == 'cas':
+            for i in range(len(sgRNA_start_indices)):
+                for index, value in zip([x+sgRNA_start_indices[i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
+                    if index in profile:
+                        profile[index].append(value)
+                    else:
+                        profile[index] = [value]
+
+            fig.append_trace(go.Scattergl(
+                x=sorted(profile.keys()),
+                y=[max(profile[x]) for x in sorted(profile.keys())],
+                fill='tozeroy',
+                mode = 'lines',
+                yaxis = 'y2',
+                line=dict(color='grey', width = 0)), 1, 2)
+
+        else:
+            for i in range(len(sgRNA_start_indices)):
+                for index, value in zip([x+sgRNA_start_indices[i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
+                    index = int(math.ceil(index/20.0))*20
+                    if index in profile:
+                        profile[index].append(value)
+                    else:
+                        profile[index] = [value]
+
+            fig.append_trace(go.Scattergl(
+                x=[x for x in sorted(profile.keys())],
+                y=[max(profile[x]) for x in sorted(profile.keys())],
+                fill='tozeroy',
+                mode = 'lines',
+                yaxis = 'y2',
+                line=dict(color='grey', width = 0)), 1, 2)
+
+        for index,row in df2.iterrows():
+            if row['chr'] == chrom:
+                fig.append_trace(go.Scatter(
+                    x=[row['start'], row['stop']],
+                    y=[-0.5, -0.5],
+                    mode = 'lines',
+                    name = row['target'],
+                    yaxis = 'y2',
+                    line=dict(color='black', width = 10)), 1, 2)
+
+        data_dict3['design-clicks'] += 1
+        data_dict3['checkbutton'] = design_n_clicks + 1
+        data_dict3['deisgned'] = True
+
+        with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+            new_json_string = json.dumps(data_dict3)
+            f.write(new_json_string + '\n')
+
+        try:
+            start = int(start)
+            stop = int(stop)
+            fig['layout'].update(
+                height=500,
+                autosize = True,
+                xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
+                xaxis2={'domain':[0.3, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
+                yaxis={'title': 'Cumulative Fraction'},
+                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
+                hovermode='closest')
+
+        except:
+            fig['layout'].update(
+                height=500,
+                autosize = True,
+                xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
+                xaxis2={'domain':[0.3, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
+                yaxis={'title': 'Cumulative Fraction'},
+                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
+                hovermode='closest')
+
+        stop_time = time.time()
+
+        print 'TIME: %s' % (stop_time - start_time)
+
+        return fig
+
+    elif (update_graph_clicks > 0) and (loading_style == {'display': 'none'}):
+
+        start_time = time.time()
+
+        fig = tools.make_subplots(rows=1, cols=2, specs=[[{}, {}]],
+                                  shared_xaxes=False, shared_yaxes=False)
+
+        df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
+        df = df[df['chr'] == chrom]
+        sgRNA_start_indices = sorted(df['start'])
+        df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv')
+
+        diffs = sorted(np.diff(sgRNA_start_indices))[:-len(df2.index)]
+
+        x_cumsum = np.sort(diffs)
+        y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
+
+        fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, showlegend=False), 1, 1)
+
+        fig.append_trace(go.Scattergl(
+            x=sgRNA_start_indices,
+            y=[1]*len(sgRNA_start_indices),
+            mode = 'markers',
+            showlegend=False,
+            yaxis = 'y2',
+            marker=dict(symbol='triangle-down', size = 5)), 1, 2)
+
+        profile = {}
+        if modality == 'cas':
+            for i in range(len(sgRNA_start_indices)):
+                for index, value in zip([x+sgRNA_start_indices[i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
+                    if index in profile:
+                        profile[index].append(value)
+                    else:
+                        profile[index] = [value]
+
+            fig.append_trace(go.Scattergl(
+                x=sorted(profile.keys()),
+                y=[max(profile[x]) for x in sorted(profile.keys())],
+                fill='tozeroy',
+                mode = 'lines',
+                yaxis = 'y2',
+                line=dict(color='grey', width = 0)), 1, 2)
+
+        else:
+            for i in range(len(sgRNA_start_indices)):
+                for index, value in zip([x+sgRNA_start_indices[i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
+                    index = int(math.ceil(index/20.0))*20
+                    if index in profile:
+                        profile[index].append(value)
+                    else:
+                        profile[index] = [value]
+
+            fig.append_trace(go.Scattergl(
+                x=[x for x in sorted(profile.keys())],
+                y=[max(profile[x]) for x in sorted(profile.keys())],
+                fill='tozeroy',
+                mode = 'lines',
+                yaxis = 'y2',
+                line=dict(color='grey', width = 0)), 1, 2)
+
+        for index,row in df2.iterrows():
+            if row['chr'] == chrom:
+                fig.append_trace(go.Scatter(
+                    x=[row['start'], row['stop']],
+                    y=[-0.5, -0.5],
+                    mode = 'lines',
+                    name = row['target'],
+                    yaxis = 'y2',
+                    line=dict(color='black', width = 10)), 1, 2)
+
+        data_dict3['design-clicks'] += 1
+        data_dict3['checkbutton'] = design_n_clicks + 1
+        data_dict3['deisgned'] = True
+
+        with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+            new_json_string = json.dumps(data_dict3)
+            f.write(new_json_string + '\n')
+
+        try:
+            start = int(start)
+            stop = int(stop)
+            fig['layout'].update(
+                height=500,
+                autosize = True,
+                xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
+                xaxis2={'domain':[0.3, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
+                yaxis={'title': 'Cumulative Fraction'},
+                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
+                hovermode='closest')
+
+        except:
+            fig['layout'].update(
+                height=500,
+                autosize = True,
+                xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
+                xaxis2={'domain':[0.3, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
+                yaxis={'title': 'Cumulative Fraction'},
+                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
+                hovermode='closest')
+
+        stop_time = time.time()
+
+        print 'TIME: %s' % (stop_time - start_time)
+
+        return fig
+
+### CALLBACKS FOR DOWNLOAD
+@app3.callback(
+    Output('download-total', 'href'),
+    [Input('download-total', 'n_clicks'),
+    Input('url', 'pathname')])
+
+def zip_dir(n_clicks, pathname):
+
+    if pathname:
+
+        UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+        RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+        if n_clicks > 0:
+
+            full_path = RESULTS_FOLDER + '/' + 'surf-design.zip'
+
+            return '/dash/urldownload%s' % full_path
+
+        else:
+            full_path = RESULTS_FOLDER + '/' + 'surf-design.zip'
+            return '/dash/urldownload%s' % full_path
+
+@app3.server.route('/dash/urldownload/tmp/RESULTS_FOLDER/<directory>/surf-design.zip')
+def generate_report_url3(directory):
+
+    RESULTS_FOLDER = '/tmp/RESULTS_FOLDER/%s' % directory
+    UPLOADS_FOLDER = '/tmp/UPLOADS_FOLDER/%s' % directory
+
+    return send_file('/tmp/RESULTS_FOLDER/%s/SURF_designed_sgRNAs.csv' % (directory), attachment_filename = 'SURF_designed_sgRNAs.csv', as_attachment = True)
 
 def main():
     app.run_server(debug = True, processes = 5, port = 9992, host = '0.0.0.0')

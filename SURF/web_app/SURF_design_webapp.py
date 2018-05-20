@@ -60,7 +60,6 @@ logger.info('Reading in %s file ...' % input_f)
 total_regions = 0
 bed_dict = {}
 with open(input_f, 'r') as f:
-	next(f)
 	for line in f:
 
 		total_regions += 1
@@ -192,7 +191,7 @@ for chrom in bed_dict:
 									continue
 
 								pams_found[sample][i] += 1
-								entry = [chrom, start_g_adj, stop_g_adj, gRNA_seq, pam_seq, '+', sample]
+								entry = [chrom, start_g_adj, stop_g_adj, gRNA_seq, pam_seq, pam_entry[0], '+', sample]
 								total_sgRNAs_dict[sample].append(entry)
 
 
@@ -209,7 +208,7 @@ for chrom in bed_dict:
 									continue
 
 								pams_found[sample][i] += 1
-								entry = [chrom, start_g_adj, stop_g_adj, gRNA_seq, pam_seq, '+', sample]
+								entry = [chrom, start_g_adj, stop_g_adj, gRNA_seq, pam_seq, pam_entry[0], '+', sample]
 								total_sgRNAs_dict[sample].append(entry)
 
 				if find_guides_bottom:
@@ -232,7 +231,7 @@ for chrom in bed_dict:
 									continue
 
 								pams_found[sample][i] += 1
-								entry = [chrom, start_g_adj, stop_g_adj, gRNA_seq, pam_seq, '-', sample]
+								entry = [chrom, start_g_adj, stop_g_adj, gRNA_seq, pam_seq, pam_entry[0], '-', sample]
 								total_sgRNAs_dict[sample].append(entry)
 
 
@@ -249,7 +248,7 @@ for chrom in bed_dict:
 									continue
 
 								pams_found[sample][i] += 1
-								entry = [chrom, start_g_adj, stop_g_adj, gRNA_seq, pam_seq, '-', sample]
+								entry = [chrom, start_g_adj, stop_g_adj, gRNA_seq, pam_seq, pam_entry[0], '-', sample]
 								total_sgRNAs_dict[sample].append(entry)
 
 logger.info('Completed PAM search for %s out of %s sites ...' % (counter, total_regions))
@@ -261,7 +260,7 @@ sgRNAs_out = 'SURF_designed_sgRNAs.csv'
 sgRNAs_bed_out = 'SURF_designed_sgRNAs.bed'
 
 with open(out_dir + '/%s' % sgRNAs_out, 'w') as f1, open(out_dir + '/%s' % sgRNAs_bed_out, 'w') as f2:
-	f1.write(','.join(map(str, ['chr', 'start', 'stop', 'sgRNA_sequence', 'pam', 'strand', 'target'])) + '\n')
+	f1.write(','.join(map(str, ['chr', 'start', 'stop', 'sgRNA_sequence', 'pam', 'pam_class','strand', 'target'])) + '\n')
 	for sample in total_sgRNAs_dict:
 		for sgRNA_entry in total_sgRNAs_dict[sample]:
 			f1.write(','.join(map(str, sgRNA_entry)) + '\n')

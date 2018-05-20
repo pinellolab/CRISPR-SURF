@@ -171,6 +171,14 @@ def parse_contents(contents, filename):
     if filename.endswith('.csv'):
         df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
         return df
+    elif filename.endswith('.bed'):
+        df1 = pd.read_table(io.StringIO(decoded.decode('utf-8')), sep = '\t', header = None)
+        df2 = pd.read_table(io.StringIO(decoded.decode('utf-8')), sep = '\t', header = None)
+
+        if len(df1.columns) >= len(df2.columns):
+            return df1
+        else:
+            return df2
     else:
         return None
 
@@ -3229,9 +3237,7 @@ app3.layout = html.Div([
 
             html.Hr(),
 
-            html.Label(id = 'upload-log', children = 'Upload Status: Incomplete', style = {'font-weight':'bold'}),
-
-            html.Label('Supported File Formats: .csv and .xls', style = {'font-weight':'bold'}),
+            html.Label('Supported File Formats: .BED', style = {'font-weight':'bold'}),
 
             dcc.Upload(
                 id='upload-data',
@@ -3249,6 +3255,37 @@ app3.layout = html.Div([
                     'textAlign': 'center',
                 },
                 multiple=False),
+
+            html.H6(id = 'upload-file-log', children = 'Upload Status: Incomplete'),
+
+            html.Hr(),
+
+            html.Div([
+
+                html.Div([
+
+                    html.Label('Input BED Data', style = {'font-weight':'bold'}),
+                    dcc.Textarea(
+                        id = 'bed-data',
+                        placeholder='Example:\nchr2     1802300     1805300     TARGET1\nchr7     4326700     4336700     TARGET2',
+                        value=None,
+                        style={'width': '100%'}
+                    ),
+
+                    ], className = 'nine columns'),
+
+                html.Div([
+
+                    # html.Br(),
+                    html.Br(),
+
+                    html.Button(id = 'load-data-button', children = 'Upload BED Data', n_clicks = 0),
+
+                    ], className = 'three columns'),
+
+                ], className = 'row'),
+
+            html.H6(id = 'upload-data-log', children = 'Upload Status: Incomplete'),
 
             ], className = 'six columns'),
 
@@ -3585,7 +3622,7 @@ def display_content(value, pathname):
 
 ### CALLBACKS FOR UPLOAD/PARAMETERS
 
-@app3.callback(Output('upload-log', 'children'),
+@app3.callback(Output('upload-file-log', 'children'),
               [Input('upload-data', 'contents'),
                Input('upload-data', 'filename'),],
                state = [State('url', 'pathname')])
@@ -3596,11 +3633,6 @@ def download_file(contents, filename, pathname):
 
         UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
         RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
-
-        try:
-            sb.call('rm %s/target_regions.csv' % UPLOADS_FOLDER, shell = True)
-        except:
-            pass
 
         # hack
         json_good = False
@@ -3614,32 +3646,128 @@ def download_file(contents, filename, pathname):
                     pass
 
         if contents is not None:
-            df = parse_contents(contents, filename)
-            if df is not None:
 
-                if all(x in df.columns for x in ['chr', 'start', 'stop', 'target']):
-                    print len(df.index)
+            if filename.endswith('.bed'):
 
-                    df.to_csv(UPLOADS_FOLDER + '/target_regions.csv', index = False)
+                df = parse_contents(contents, filename)
+                if df is not None:
 
-                    data_dict3['chr'] = [str(x) for x in df['chr']]
+                    if len(df.columns) >= 3:
 
-                    with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
-                        new_json_string = json.dumps(data_dict3)
-                        f.write(new_json_string + '\n')
+                        if all('chr' in x for x in df[0]):
 
-                    return 'Upload Status: Complete'
+                            try:
+
+                                df[1] = [int(x) for x in df[1]]
+                                df[2] = [int(x) for x in df[2]]
+
+                                try:
+                                    sb.call('rm %s/target_regions.csv' % UPLOADS_FOLDER, shell = True)
+                                except:
+                                    pass
+
+                                df.to_csv(UPLOADS_FOLDER + '/target_regions.csv', index = False, header = False)
+
+                                data_dict3['chr'] = [str(x) for x in set(df[0])]
+
+                                with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+                                    new_json_string = json.dumps(data_dict3)
+                                    f.write(new_json_string + '\n')
+
+                                return 'Upload Status: Complete'
+
+                            except:
+
+                                return 'Upload Status: Incomplete (2nd and 3rd column must be numeric. Please do not include a header.)'
+
+                        else:
+                            return 'Upload Status: Incomplete (1st column must contain chr)'
+
+                    else:
+                        return 'Upload Status: Incomplete (.BED format requires: chr   start   stop)'
 
                 else:
-                    return 'Upload Status: Incomplete (Required Columns - chr, start, stop, target)'
+                    return 'Upload Status: Incomplete (.BED format requires: chr   start   stop)'
 
             else:
-                return 'Upload Status: Incomplete (Please upload .csv format)'
+                return 'Upload Status: Incomplete (.BED format required)'
 
         return 'Upload Status: Incomplete'
 
-
     return 'Upload Status: Incomplete'
+
+@app3.callback(Output('upload-data-log', 'children'),
+              [Input('load-data-button', 'n_clicks')],
+               state = [
+               State('bed-data', 'value'),
+               State('url', 'pathname')])
+
+def download_file(n_clicks, bed_data, pathname):
+
+    if pathname:
+
+        UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+        RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+        # hack
+        json_good = False
+        while not json_good:
+            with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+                json_string = f.readline().strip()
+                try:
+                    data_dict3 = json.loads(json_string)
+                    json_good = True
+                except:
+                    pass
+
+        bed_lines = []
+        if len(bed_data.split('\n')) > 0 and bed_data != '':
+            for entry in bed_data.split('\n'):
+                entry = entry.strip().split()
+                if len(entry) >= 3:
+
+                    if 'chr' in str(entry[0]):
+
+                        try:
+                            chrom = str(entry[0])
+                            start_index = int(entry[1])
+                            stop_index = int(entry[2])
+                            bed_lines.append([chrom, start_index, stop_index] + entry[3:])
+
+                        except:
+                            return 'Upload Status: Incomplete (2nd and 3rd column must be numeric. Please do not include a header.)'
+
+                    else:
+                        return 'Upload Status: Incomplete (1st column must contain chr)'
+
+                else:
+                    return 'Upload Status: Incomplete (Three columns are necessary: chr   start   stop)'
+
+        else:
+            return 'Upload Status: Incomplete'
+
+        df = pd.DataFrame(bed_lines)
+
+        try:
+            sb.call('rm %s/target_regions.csv' % UPLOADS_FOLDER, shell = True)
+        except:
+            pass
+
+        df.to_csv(UPLOADS_FOLDER + '/target_regions.csv', index = False, header = False)
+
+        data_dict3['chr'] = [str(x) for x in set(df[0])]
+
+        with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+            new_json_string = json.dumps(data_dict3)
+            f.write(new_json_string + '\n')
+
+        return 'Upload Status: Complete'
+
+    else:
+        return 'Upload Status: Incomplete'
+
+
+
 
 @app3.callback(
     Output('sgRNA-design', 'children'),
@@ -3729,20 +3857,24 @@ def update_sgRNA_design(pams, sgRNA_length, orientation, g_constraint, pathname)
 ### CALLBACKS FOR DESIGN AND VISUALIZATION
 @app3.callback(
     Output('time-estimate', 'children'),
-    [Input('tabs', 'value')],
+    [Input('upload-file-log', 'children'),
+    Input('upload-data-log', 'children'),
+    Input('pams', 'value')],
     state = [State('pams', 'value'),
     State('url', 'pathname')])
 
-def update_time_estimate(data, pams, pathname):
+def update_time_estimate(trigger1, trigger2, pams_trigger, pams, pathname):
 
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
+    time.sleep(1)
+
     try:
-        df = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv')
+        df = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
         bp_tiled = 0
         for index, row in df.iterrows():
-            bp_tiled += (row['stop'] - row['start'])
+            bp_tiled += (row[2] - row[1])
 
         if ',' in pams:
             if ' ' in pams:
@@ -3754,7 +3886,7 @@ def update_time_estimate(data, pams, pathname):
         else:
             pams = [pams.upper()]
 
-        estimate_simulation_time = 3.0*float(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))/60.0*float(len(pams))
+        estimate_simulation_time = float(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))/60.0*float(len(pams))
 
         if estimate_simulation_time >= 1:
             return 'Estimated Time: %s Minutes' % "{0:.2f}".format(estimate_simulation_time)
@@ -3764,7 +3896,6 @@ def update_time_estimate(data, pams, pathname):
 
     except: 
         return  'Estimated Time: Not Available'
-
 
 @app3.callback(
     Output('chr', 'options'),
@@ -3792,10 +3923,11 @@ def update_chr(figure, pathname):
     return [{'label':entry, 'value':entry} for entry in unique_chr]
 
 @app3.callback(Output('chr', 'value'),
-              [Input('upload-log', 'children')],
+              [Input('upload-file-log', 'children'),
+              Input('upload-data-log', 'children')],
               state = [State('url', 'pathname')])
 
-def initialize_chr(log_val, pathname):
+def initialize_chr(log_file, log_data, pathname):
 
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
@@ -3811,7 +3943,7 @@ def initialize_chr(log_val, pathname):
             except:
                 pass
 
-    if log_val == 'Upload Status: Complete':
+    if log_file == 'Upload Status: Complete' or log_data == 'Upload Status: Complete':
         return data_dict3['chr'][0]
 
     else:
@@ -3930,10 +4062,10 @@ def update_container(n_clicks, significance_container, pams, pathname):
             except:
                 pass
 
-    df = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv')
+    df = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
     bp_tiled = 0
     for index, row in df.iterrows():
-        bp_tiled += (row['stop'] - row['start'])
+        bp_tiled += abs(row[2] - row[1])
 
     if ',' in pams:
         if ' ' in pams:
@@ -3947,7 +4079,7 @@ def update_container(n_clicks, significance_container, pams, pathname):
 
     # First time analysis
     if n_clicks == data_dict3['checkbutton']:
-        return 1500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams)
+        return max(500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams), 5000)
 
     else:
         return 2000000000
@@ -3991,30 +4123,37 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
         fig = tools.make_subplots(rows=1, cols=2, specs=[[{}, {}]],
                                   shared_xaxes=False, shared_yaxes=False)
 
+        sgRNA_start_indices = {}
         df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
+        df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
         df = df[df['chr'] == chrom]
-        sgRNA_start_indices = sorted(df['start'])
-        df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv')
+        sgRNA_start_indices['total'] = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
+        
+        pam_classes = set(df['pam_class'])
+        for pam_class in pam_classes:
+            df_tmp = df[df['pam_class'] == pam_class]
+            sgRNA_start_indices[pam_class] = sorted([int(x) for x in (df_tmp['start'] + df_tmp['stop'])/2.0])
 
-        diffs = sorted(np.diff(sgRNA_start_indices))[:-len(df2.index)]
+        for pam_class in sgRNA_start_indices:
+            diffs = sorted(np.diff(sgRNA_start_indices[pam_class]))[:-len(df2.index)]
+            x_cumsum = np.sort(diffs)
+            y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
+            fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, name = pam_class, showlegend=True), 1, 1)
 
-        x_cumsum = np.sort(diffs)
-        y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
-
-        fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, showlegend=False), 1, 1)
-
-        fig.append_trace(go.Scattergl(
-            x=sgRNA_start_indices,
-            y=[1]*len(sgRNA_start_indices),
-            mode = 'markers',
-            showlegend=False,
-            yaxis = 'y2',
-            marker=dict(symbol='triangle-down', size = 5)), 1, 2)
+            if pam_class != 'total':
+                fig.append_trace(go.Scattergl(
+                    x=sgRNA_start_indices[pam_class],
+                    y=[1]*len(sgRNA_start_indices[pam_class]),
+                    mode = 'markers',
+                    showlegend = True,
+                    name = pam_class,
+                    yaxis = 'y2',
+                    marker=dict(symbol='triangle-down', size = 5)), 1, 2)
 
         profile = {}
         if modality == 'cas':
-            for i in range(len(sgRNA_start_indices)):
-                for index, value in zip([x+sgRNA_start_indices[i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
+            for i in range(len(sgRNA_start_indices['total'])):
+                for index, value in zip([x+sgRNA_start_indices['total'][i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
                     if index in profile:
                         profile[index].append(value)
                     else:
@@ -4025,12 +4164,13 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 y=[max(profile[x]) for x in sorted(profile.keys())],
                 fill='tozeroy',
                 mode = 'lines',
+                showlegend=False,
                 yaxis = 'y2',
                 line=dict(color='grey', width = 0)), 1, 2)
 
         else:
-            for i in range(len(sgRNA_start_indices)):
-                for index, value in zip([x+sgRNA_start_indices[i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
+            for i in range(len(sgRNA_start_indices['total'])):
+                for index, value in zip([x+sgRNA_start_indices['total'][i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
                     index = int(math.ceil(index/20.0))*20
                     if index in profile:
                         profile[index].append(value)
@@ -4042,18 +4182,29 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 y=[max(profile[x]) for x in sorted(profile.keys())],
                 fill='tozeroy',
                 mode = 'lines',
+                showlegend=False,
                 yaxis = 'y2',
                 line=dict(color='grey', width = 0)), 1, 2)
 
         for index,row in df2.iterrows():
-            if row['chr'] == chrom:
-                fig.append_trace(go.Scatter(
-                    x=[row['start'], row['stop']],
-                    y=[-0.5, -0.5],
-                    mode = 'lines',
-                    name = row['target'],
-                    yaxis = 'y2',
-                    line=dict(color='black', width = 10)), 1, 2)
+            if row[0] == chrom:
+                if len(row) > 3:
+                    fig.append_trace(go.Scatter(
+                        x=[row[1], row[2]],
+                        y=[-0.5, -0.5],
+                        mode = 'lines',
+                        name = row[3],
+                        yaxis = 'y2',
+                        line=dict(color='black', width = 10)), 1, 2)
+
+                else:
+                    fig.append_trace(go.Scatter(
+                        x=[row[1], row[2]],
+                        y=[-0.5, -0.5],
+                        mode = 'lines',
+                        name = '_'.join(map(str, row)),
+                        yaxis = 'y2',
+                        line=dict(color='black', width = 10)), 1, 2)
 
         data_dict3['design-clicks'] += 1
         data_dict3['checkbutton'] = design_n_clicks + 1
@@ -4100,8 +4251,8 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
 
         df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
         df = df[df['chr'] == chrom]
-        sgRNA_start_indices = sorted(df['start'])
-        df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv')
+        sgRNA_start_indices = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
+        df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
 
         diffs = sorted(np.diff(sgRNA_start_indices))[:-len(df2.index)]
 
@@ -4132,6 +4283,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 y=[max(profile[x]) for x in sorted(profile.keys())],
                 fill='tozeroy',
                 mode = 'lines',
+                showlegend=False,
                 yaxis = 'y2',
                 line=dict(color='grey', width = 0)), 1, 2)
 
@@ -4149,18 +4301,29 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 y=[max(profile[x]) for x in sorted(profile.keys())],
                 fill='tozeroy',
                 mode = 'lines',
+                showlegend=False,
                 yaxis = 'y2',
                 line=dict(color='grey', width = 0)), 1, 2)
 
         for index,row in df2.iterrows():
-            if row['chr'] == chrom:
-                fig.append_trace(go.Scatter(
-                    x=[row['start'], row['stop']],
-                    y=[-0.5, -0.5],
-                    mode = 'lines',
-                    name = row['target'],
-                    yaxis = 'y2',
-                    line=dict(color='black', width = 10)), 1, 2)
+            if row[0] == chrom:
+                if len(row) > 3:
+                    fig.append_trace(go.Scatter(
+                        x=[row[1], row[2]],
+                        y=[-0.5, -0.5],
+                        mode = 'lines',
+                        name = row[3],
+                        yaxis = 'y2',
+                        line=dict(color='black', width = 10)), 1, 2)
+
+                else:
+                    fig.append_trace(go.Scatter(
+                        x=[row[1], row[2]],
+                        y=[-0.5, -0.5],
+                        mode = 'lines',
+                        name = '_'.join(map(str, row)),
+                        yaxis = 'y2',
+                        line=dict(color='black', width = 10)), 1, 2)
 
         data_dict3['design-clicks'] += 1
         data_dict3['checkbutton'] = design_n_clicks + 1
@@ -4179,7 +4342,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
                 xaxis2={'domain':[0.3, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
                 yaxis={'title': 'Cumulative Fraction'},
-                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
+                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs'], 'range':[-0.6, 1.1]},
                 hovermode='closest')
 
         except:
@@ -4189,7 +4352,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
                 xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
                 xaxis2={'domain':[0.3, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
                 yaxis={'title': 'Cumulative Fraction'},
-                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
+                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs'], 'range':[-0.6, 1.1]},
                 hovermode='closest')
 
         stop_time = time.time()

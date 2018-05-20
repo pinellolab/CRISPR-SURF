@@ -3886,7 +3886,7 @@ def update_time_estimate(trigger1, trigger2, pams_trigger, pams, pathname):
         else:
             pams = [pams.upper()]
 
-        estimate_simulation_time = float(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))/60.0*float(len(pams))
+        estimate_simulation_time = 3.0*float(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))/60.0*float(len(pams))
 
         if estimate_simulation_time >= 1:
             return 'Estimated Time: %s Minutes' % "{0:.2f}".format(estimate_simulation_time)
@@ -4079,7 +4079,7 @@ def update_container(n_clicks, significance_container, pams, pathname):
 
     # First time analysis
     if n_clicks == data_dict3['checkbutton']:
-        return max(500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams), 5000)
+        return max(1500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams), 5000)
 
     else:
         return 2000000000

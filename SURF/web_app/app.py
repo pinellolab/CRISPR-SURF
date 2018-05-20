@@ -3456,7 +3456,7 @@ app3.layout = html.Div([
 
                     ], className = 'row'),
 
-                ], style = {'display': 'none'}),
+                ]),# style = {'display': 'none'}),
 
             dcc.Graph(id='design-plot', animate=False),
 
@@ -3929,6 +3929,8 @@ def initialize_chr(log_file, log_data, pathname):
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
+    time.sleep(1)
+
     # hack
     json_good = False
     while not json_good:
@@ -3983,7 +3985,8 @@ def find_regions(n_clicks, genome, orient, guide_l, g_constraint, pathname):
 @app3.callback(
     Output('custom-loading-states-1', 'style'),
     [Input('design-button', 'n_clicks'),
-    Input('design-container', 'style')],
+    Input('design-plot', 'figure')],
+    # Input('design-container', 'style')],
     state = [State('url', 'pathname')])
 
 def update_container(n_clicks, significance_container, pathname):
@@ -4009,37 +4012,38 @@ def update_container(n_clicks, significance_container, pathname):
     else:
         return {'display': 'none'}
 
-@app3.callback(
-    Output('design-container', 'style'),
-    [Input('design-plot', 'figure')],
-    state = [State('url', 'pathname')])
+# @app3.callback(
+#     Output('design-container', 'style'),
+#     [Input('design-plot', 'figure')],
+#     state = [State('url', 'pathname')])
 
-def significance_container(fig_update, pathname):
+# def significance_container(fig_update, pathname):
 
-    UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
-    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+#     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+#     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-    # hack
-    json_good = False
-    while not json_good:
-        with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
-            json_string = f.readline().strip()
-            try:
-                data_dict3 = json.loads(json_string)
-                json_good = True
-            except:
-                pass
+#     # hack
+#     json_good = False
+#     while not json_good:
+#         with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+#             json_string = f.readline().strip()
+#             try:
+#                 data_dict3 = json.loads(json_string)
+#                 json_good = True
+#             except:
+#                 pass
 
-    if data_dict3['design-clicks'] > 0:
-        return {'display': 'block'}
+#     if data_dict3['design-clicks'] > 0:
+#         return {'display': 'block'}
 
-    else:
-        return {'display': 'none'}
+#     else:
+#         return {'display': 'none'}
 
 @app3.callback(
     Output('common-interval-1', 'interval'),
     [Input('design-button', 'n_clicks'),
-    Input('design-container', 'style')],
+    Input('design-plot', 'figure')],
+    # Input('design-container', 'style')],
     state = [State('pams', 'value'),
     State('url', 'pathname')])
 
@@ -4076,9 +4080,11 @@ def update_container(n_clicks, significance_container, pams, pathname):
 
     # First time analysis
     if n_clicks == data_dict3['checkbutton']:
+        print 'fasttttttttttttttt'
         return max(500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams), 5000)
 
     else:
+        print 'slowwwwwwwwwwwwwww'
         return 2000000000
 
 @app3.callback(

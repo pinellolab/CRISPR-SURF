@@ -1,6 +1,6 @@
 # CRISPR-SURF
 
-CRISPR-SURF (**S**creening of **U**ncharacterized **R**egion **F**unction) is an exploratory and interactive computational framework for the analysis of CRISPR-Cas, CRISPRi, and CRISPRa tiling screens.
+CRISPR-SURF (**S**creening of **U**ncharacterized **R**egion **F**unction) is an exploratory and interactive computational framework for the design and analysis of CRISPR-Cas, CRISPRi, and CRISPRa tiling screens.
 
 CRISPR-SURF is available as a user-friendly, open-source software and can be used interactively as a web application at [crisprsurf.pinellolab.org](http://crisprsurf.pinellolab.org/) or as a stand-alone command-line tool with Docker [https://github.com/pinellolab/CRISPR-SURF](https://github.com/pinellolab/CRISPR-SURF).
 
@@ -12,6 +12,38 @@ Docker can be downloaded freely here: [https://store.docker.com/search?offering=
 
 To get a local copy of CRISPR-SURF, simply execute the following command:
 * ```docker pull pinellolab/crisprsurf```
+
+## CRISPR-SURF Design
+
+The CRISPR-SURF Design script allows users to design sgRNAs for their CRISPR tiling screen. Run CRISPR-SURF Design in the terminal with the command:
+
+```
+docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_design [options]
+```
+
+Users can specify the following options:
+```
+-bed, --bed
+      Input bed file to make design tiling sgRNAs.
+-genome, --genome
+      Input genome 2bit file.
+-pams, --pams
+      Specification of different CRISPR PAMs ([ATCG]GG, TTT[ACG, etc.]). This can be a list with multiple PAMs separated by a space.
+-orient, --orientations
+      Orientation of spacer relative to PAM (Cas9 -> left, Cpf1 -> right). This must match the length of the -pams option as an orientation must be specified for each PAM. Multiple orientations are separated by a space.
+-guide_l, --guide_length
+      Length of the sgRNA to design.
+-g_constraint, --g_constraint
+      Constraint forcing the 5' sgRNA bp to be G base.
+-out, --out_dir
+      Name of output directory.
+```
+
+**Example Command-Line Run**
+
+```
+docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_design -bed /PATH/TO/BED -genome /PATH/TO/2BIT_GENOME -pams [ATCG]GG TTT[ACG] -orient left right -guide_l 20 -g_constraint false -out example_run
+```
 
 ## CRISPR-SURF Count
 

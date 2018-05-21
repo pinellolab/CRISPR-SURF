@@ -2415,6 +2415,31 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
 
         boundaries.append(len(indices_filt))
 
+        # plot statistical power
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + power_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                # yaxis = 'y2',
+                line=dict(color='rgb(255,165,0)')), 1, 1)
+
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + y_p_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                yaxis = 'y2',
+                line=dict(color='rgb(169,169,169)')), 2, 1)
+
         # Find indices with significant padj-values
         significant_boundary_indices = []
         padj_list = [float(x) for x in gammas2betas['padj']]
@@ -2475,29 +2500,29 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     yaxis = 'y2',
                     line=dict(color='rgb(30,144,255)', width = 5)), 2, 1)
 
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
+        # for i in range(len(boundaries) - 1):
+        #     start_index, stop_index = boundaries[i], boundaries[i + 1]
 
-            fig.append_trace(go.Scatter(
-                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
-                y=[0] + power_filt[start_index:stop_index] + [0],
-                mode = 'lines',
-                fill='tozeroy',
-                showlegend=False,
-                # yaxis = 'y2',
-                line=dict(color='rgb(255,165,0)')), 1, 1)
+        #     fig.append_trace(go.Scatter(
+        #         x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+        #         y=[0] + power_filt[start_index:stop_index] + [0],
+        #         mode = 'lines',
+        #         fill='tozeroy',
+        #         showlegend=False,
+        #         # yaxis = 'y2',
+        #         line=dict(color='rgb(255,165,0)')), 1, 1)
 
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
+        # for i in range(len(boundaries) - 1):
+        #     start_index, stop_index = boundaries[i], boundaries[i + 1]
 
-            fig.append_trace(go.Scatter(
-                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
-                y=[0] + y_p_filt[start_index:stop_index] + [0],
-                mode = 'lines',
-                fill='tozeroy',
-                showlegend=False,
-                yaxis = 'y2',
-                line=dict(color='rgb(169,169,169)')), 2, 1)
+        #     fig.append_trace(go.Scatter(
+        #         x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+        #         y=[0] + y_p_filt[start_index:stop_index] + [0],
+        #         mode = 'lines',
+        #         fill='tozeroy',
+        #         showlegend=False,
+        #         yaxis = 'y2',
+        #         line=dict(color='rgb(169,169,169)')), 2, 1)
 
         fig['layout'].update(
             height=600,
@@ -2556,6 +2581,31 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
 
         boundaries.append(len(indices_filt))
 
+        # plot statistical power
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + power_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                # yaxis = 'y2',
+                line=dict(color='rgb(255,165,0)')), 1, 1)
+
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + y_p_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                yaxis = 'y2',
+                line=dict(color='rgb(169,169,169)')), 2, 1)
+
         # Find indices with significant padj-values
         significant_boundary_indices = []
         padj_list = [float(x) for x in gammas2betas['padj']]
@@ -2617,29 +2667,29 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     yaxis = 'y2',
                     line=dict(color='rgb(30,144,255)', width = 5)), 2, 1)
 
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
+        # for i in range(len(boundaries) - 1):
+        #     start_index, stop_index = boundaries[i], boundaries[i + 1]
 
-            fig.append_trace(go.Scatter(
-                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
-                y=[0] + power_filt[start_index:stop_index] + [0],
-                mode = 'lines',
-                fill='tozeroy',
-                showlegend=False,
-                # yaxis = 'y2',
-                line=dict(color='rgb(255,165,0)')), 1, 1)
+        #     fig.append_trace(go.Scatter(
+        #         x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+        #         y=[0] + power_filt[start_index:stop_index] + [0],
+        #         mode = 'lines',
+        #         fill='tozeroy',
+        #         showlegend=False,
+        #         # yaxis = 'y2',
+        #         line=dict(color='rgb(255,165,0)')), 1, 1)
 
-        for i in range(len(boundaries) - 1):
-            start_index, stop_index = boundaries[i], boundaries[i + 1]
+        # for i in range(len(boundaries) - 1):
+        #     start_index, stop_index = boundaries[i], boundaries[i + 1]
 
-            fig.append_trace(go.Scatter(
-                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
-                y=[0] + y_p_filt[start_index:stop_index] + [0],
-                mode = 'lines',
-                fill='tozeroy',
-                showlegend=False,
-                yaxis = 'y2',
-                line=dict(color='rgb(169,169,169)')), 2, 1)
+        #     fig.append_trace(go.Scatter(
+        #         x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+        #         y=[0] + y_p_filt[start_index:stop_index] + [0],
+        #         mode = 'lines',
+        #         fill='tozeroy',
+        #         showlegend=False,
+        #         yaxis = 'y2',
+        #         line=dict(color='rgb(169,169,169)')), 2, 1)
 
         try:
             start = int(start)

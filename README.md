@@ -24,19 +24,19 @@ docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf 
 Users can specify the following options:
 ```
 -bed, --bed
-      Input bed file to make design tiling sgRNAs.
+      Input bed file to design tiling sgRNAs. (Default: None)
 -genome, --genome
-      Input genome 2bit file.
+      Input genome 2bit file. (Default: None)
 -pams, --pams
-      Specification of different CRISPR PAMs ([ATCG]GG, TTT[ACG, etc.]). This can be a list with multiple PAMs separated by a space.
+      Specification of different CRISPR PAMs (i.e. [ATCG]GG, TTT[ACG]). This can be a list with multiple PAMs separated by spaces. (Default: None)
 -orient, --orientations
-      Orientation of spacer relative to PAM (Cas9 -> left, Cpf1 -> right). This must match the length of the -pams option as an orientation must be specified for each PAM. Multiple orientations are separated by a space.
+      Orientation of spacer relative to PAM. This must match the length of the -pams option as an orientation must be specified for each PAM. Multiple orientations are separated by spaces. (left, right | Default: None)
 -guide_l, --guide_length
-      Length of the sgRNA to design.
+      Length of the sgRNA to design. (Default: 20)
 -g_constraint, --g_constraint
-      Constraint forcing the 5' sgRNA bp to be G base.
+      Constraint forcing the 5' sgRNA bp to be G base. (true, false | Default: false)
 -out, --out_dir
-      Name of output directory.
+      Name of output directory. (Default: .)
 ```
 
 **Example Command-Line Run**

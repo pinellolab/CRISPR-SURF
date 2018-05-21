@@ -3267,7 +3267,7 @@ app3.layout = html.Div([
                     html.Label('Input BED Data', style = {'font-weight':'bold'}),
                     dcc.Textarea(
                         id = 'bed-data',
-                        placeholder='Example:\nchr2     1802300     1805300     TARGET1\nchr7     4326700     4336700     TARGET2',
+                        placeholder='Example:\nchr8   128745680   128749680   MYC_TSS_hg19\nchr2   60676302   60680302   BCL11A_TSS_hg19',
                         value=None,
                         style={'width': '100%'}
                     ),
@@ -3314,10 +3314,11 @@ app3.layout = html.Div([
                 html.Div([
 
                     html.Label('PAMs', style = {'font-weight':'bold'}),
+                    html.Label('Input a PAM or multiple PAMs separated by a space'),
                     dcc.Input(
                         id = 'pams',
                         type = 'text',
-                        placeholder='i.e. [ATCG]GG,TTT[ACG]',
+                        placeholder='[ATCG]GG TTT[ACG]',
                         value = None
                         ),
 
@@ -3661,6 +3662,9 @@ def download_file(contents, filename, pathname):
                                 df[1] = [int(x) for x in df[1]]
                                 df[2] = [int(x) for x in df[2]]
 
+                                if sum(df[2] - df[1]) > 1000000:
+                                    return 'Upload Status: Incomplete (Exceeded limit of 1Mb. Currently at %sMb)' % (float(sum(df[2] - df[1]))/1000000.0)
+
                                 try:
                                     sb.call('rm %s/target_regions.csv' % UPLOADS_FOLDER, shell = True)
                                 except:
@@ -3721,6 +3725,7 @@ def download_file(n_clicks, bed_data, pathname):
                     pass
 
         bed_lines = []
+        bp_tiled = 0
         if len(bed_data.split('\n')) > 0 and bed_data != '':
             for entry in bed_data.split('\n'):
                 entry = entry.strip().split()
@@ -3730,8 +3735,9 @@ def download_file(n_clicks, bed_data, pathname):
 
                         try:
                             chrom = str(entry[0])
-                            start_index = int(entry[1])
-                            stop_index = int(entry[2])
+                            start_index = min(int(entry[1]), int(entry[2]))
+                            stop_index = max(int(entry[1]), int(entry[2]))
+                            bp_tiled += abs(stop_index - start_index)
                             bed_lines.append([chrom, start_index, stop_index] + entry[3:])
 
                         except:
@@ -3746,22 +3752,26 @@ def download_file(n_clicks, bed_data, pathname):
         else:
             return 'Upload Status: Incomplete'
 
-        df = pd.DataFrame(bed_lines)
+        if bp_tiled <= 1000000:
+            df = pd.DataFrame(bed_lines)
 
-        try:
-            sb.call('rm %s/target_regions.csv' % UPLOADS_FOLDER, shell = True)
-        except:
-            pass
+            try:
+                sb.call('rm %s/target_regions.csv' % UPLOADS_FOLDER, shell = True)
+            except:
+                pass
 
-        df.to_csv(UPLOADS_FOLDER + '/target_regions.csv', index = False, header = False)
+            df.to_csv(UPLOADS_FOLDER + '/target_regions.csv', index = False, header = False)
 
-        data_dict3['chr'] = [str(x) for x in set(df[0])]
+            data_dict3['chr'] = [str(x) for x in set(df[0])]
 
-        with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
-            new_json_string = json.dumps(data_dict3)
-            f.write(new_json_string + '\n')
+            with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+                new_json_string = json.dumps(data_dict3)
+                f.write(new_json_string + '\n')
 
-        return 'Upload Status: Complete'
+            return 'Upload Status: Complete'
+
+        else:
+            return 'Upload Status: Incomplete (Exceeded limit of 1Mb. Currently at %sMb)' % (float(bp_tiled)/1000000.0)
 
     else:
         return 'Upload Status: Incomplete'
@@ -3871,7 +3881,7 @@ def update_time_estimate(trigger1, trigger2, pams_trigger, pams, pathname):
         df = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
         bp_tiled = 0
         for index, row in df.iterrows():
-            bp_tiled += (row[2] - row[1])
+            bp_tiled += abs(row[2] - row[1])
 
         if ',' in pams:
             if ' ' in pams:
@@ -3985,7 +3995,8 @@ def find_regions(n_clicks, genome, orient, guide_l, g_constraint, pathname):
 @app3.callback(
     Output('custom-loading-states-1', 'style'),
     [Input('design-button', 'n_clicks'),
-    Input('design-plot', 'figure')],
+    Input('tmp2', 'children')],
+    # Input('design-plot', 'figure')],
     # Input('design-container', 'style')],
     state = [State('url', 'pathname')])
 
@@ -4042,7 +4053,8 @@ def update_container(n_clicks, significance_container, pathname):
 @app3.callback(
     Output('common-interval-1', 'interval'),
     [Input('design-button', 'n_clicks'),
-    Input('design-plot', 'figure')],
+    Input('tmp2', 'children')],
+    # Input('design-plot', 'figure')],
     # Input('design-container', 'style')],
     state = [State('pams', 'value'),
     State('url', 'pathname')])
@@ -4081,27 +4093,309 @@ def update_container(n_clicks, significance_container, pams, pathname):
     # First time analysis
     if n_clicks == data_dict3['checkbutton']:
         print 'fasttttttttttttttt'
-        return max(500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams), 5000)
+        # return max(500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams), 5000)
+        return 500
 
     else:
         print 'slowwwwwwwwwwwwwww'
         return 2000000000
 
+# @app3.callback(
+#     Output('design-plot', 'figure'),
+#     [Input('update-design-plot', 'n_clicks'),
+#     Input('start','type')],
+#     state=[
+#     State('chr', 'value'),
+#     State('start', 'value'),
+#     State('stop', 'value'),
+#     State('design-button', 'n_clicks'),
+#     State('custom-loading-states-1', 'style'),
+#     State('modality', 'value'),
+#     State('url', 'pathname')],
+#     events=[Event('common-interval-1', 'interval')])
+
+# def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop, design_n_clicks, loading_style, modality, pathname):
+
+#     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+#     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+#     # hack
+#     json_good = False
+#     while not json_good:
+#         with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+#             json_string = f.readline().strip()
+#             try:
+#                 data_dict3 = json.loads(json_string)
+#                 json_good = True
+#             except:
+#                 pass
+
+#     if os.path.exists(RESULTS_FOLDER + '/design_flag.txt'):
+
+#         start_time = time.time()
+
+#         sb.call('rm %s/design_flag.txt' % RESULTS_FOLDER, shell = True)
+
+#         fig = tools.make_subplots(rows=1, cols=2, specs=[[{}, {}]],
+#                                   shared_xaxes=False, shared_yaxes=False)
+
+#         sgRNA_start_indices = {}
+#         df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
+#         df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
+#         df = df[df['chr'] == chrom]
+#         sgRNA_start_indices['PAMs Combined'] = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
+        
+#         pam_classes = set(df['pam_class'])
+#         for pam_class in pam_classes:
+#             df_tmp = df[df['pam_class'] == pam_class]
+#             sgRNA_start_indices[pam_class] = sorted([int(x) for x in (df_tmp['start'] + df_tmp['stop'])/2.0])
+
+#         for pam_class in sgRNA_start_indices:
+#             diffs = sorted(np.diff(sgRNA_start_indices[pam_class]))[:-len(df2.index)]
+#             x_cumsum = np.sort(diffs)
+#             y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
+#             fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, name = pam_class + ' CDF', showlegend=True), 1, 1)
+
+#         for pam_class in sgRNA_start_indices:
+#             if pam_class != 'PAMs Combined':
+#                 fig.append_trace(go.Scattergl(
+#                     x=sgRNA_start_indices[pam_class],
+#                     y=[1]*len(sgRNA_start_indices[pam_class]),
+#                     mode = 'markers',
+#                     showlegend = True,
+#                     name = pam_class + ' sgRNAs',
+#                     yaxis = 'y2',
+#                     marker=dict(symbol='triangle-down', size = 10)), 1, 2)
+
+#         profile = {}
+#         if modality == 'cas':
+#             for i in range(len(sgRNA_start_indices['PAMs Combined'])):
+#                 for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
+#                     if index in profile:
+#                         profile[index].append(value)
+#                     else:
+#                         profile[index] = [value]
+
+#             fig.append_trace(go.Scattergl(
+#                 x=sorted(profile.keys()),
+#                 y=[max(profile[x]) for x in sorted(profile.keys())],
+#                 fill='tozeroy',
+#                 mode = 'lines',
+#                 showlegend=False,
+#                 yaxis = 'y2',
+#                 line=dict(color='grey', width = 0)), 1, 2)
+
+#         else:
+#             for i in range(len(sgRNA_start_indices['PAMs Combined'])):
+#                 for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
+#                     index = int(math.ceil(index/20.0))*20
+#                     if index in profile:
+#                         profile[index].append(value)
+#                     else:
+#                         profile[index] = [value]
+
+#             fig.append_trace(go.Scattergl(
+#                 x=[x for x in sorted(profile.keys())],
+#                 y=[max(profile[x]) for x in sorted(profile.keys())],
+#                 fill='tozeroy',
+#                 mode = 'lines',
+#                 showlegend=False,
+#                 yaxis = 'y2',
+#                 line=dict(color='grey', width = 0)), 1, 2)
+
+#         for index,row in df2.iterrows():
+#             if row[0] == chrom:
+#                 if len(row) > 3:
+#                     fig.append_trace(go.Scatter(
+#                         x=[row[1], row[2]],
+#                         y=[-0.5, -0.5],
+#                         mode = 'lines',
+#                         name = row[3],
+#                         yaxis = 'y2',
+#                         line=dict(color='black', width = 10)), 1, 2)
+
+#                 else:
+#                     fig.append_trace(go.Scatter(
+#                         x=[row[1], row[2]],
+#                         y=[-0.5, -0.5],
+#                         mode = 'lines',
+#                         name = '_'.join(map(str, row)),
+#                         yaxis = 'y2',
+#                         line=dict(color='black', width = 10)), 1, 2)
+
+#         data_dict3['design-clicks'] += 1
+#         data_dict3['checkbutton'] = design_n_clicks + 1
+#         data_dict3['deisgned'] = True
+
+#         with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+#             new_json_string = json.dumps(data_dict3)
+#             f.write(new_json_string + '\n')
+
+#         try:
+#             start = int(start)
+#             stop = int(stop)
+#             fig['layout'].update(
+#                 height=500,
+#                 autosize = True,
+#                 xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
+#                 xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
+#                 yaxis={'title': 'Cumulative Fraction'},
+#                 yaxis2={'showgrid': False, 'zeroline':False, 'tickvals':[-0.5, 0.15, 0.25, 0.35, 1], 'ticktext':['Regions','Coverage','Perturbation','Expected','sgRNAs'], 'range':[-0.6, 1.1]},
+#                 hovermode='closest')
+
+#         except:
+#             fig['layout'].update(
+#                 height=500,
+#                 autosize = True,
+#                 xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
+#                 xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
+#                 yaxis={'title': 'Cumulative Fraction'},
+#                 yaxis2={'showgrid': False, 'zeroline':False, 'tickvals':[-0.5, 0.15, 0.25, 0.35, 1], 'ticktext':['Regions','Coverage','Perturbation','Expected','sgRNAs'], 'range':[-0.6, 1.1]},
+#                 hovermode='closest')
+
+#         stop_time = time.time()
+
+#         print 'TIME: %s' % (stop_time - start_time)
+
+#         return fig
+
+#     elif (update_graph_clicks > 0) and (loading_style == {'display': 'none'}):
+
+#         start_time = time.time()
+
+#         sb.call('rm %s/design_flag.txt' % RESULTS_FOLDER, shell = True)
+
+#         fig = tools.make_subplots(rows=1, cols=2, specs=[[{}, {}]],
+#                                   shared_xaxes=False, shared_yaxes=False)
+
+#         sgRNA_start_indices = {}
+#         df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
+#         df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
+#         df = df[df['chr'] == chrom]
+#         sgRNA_start_indices['PAMs Combined'] = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
+        
+#         pam_classes = set(df['pam_class'])
+#         for pam_class in pam_classes:
+#             df_tmp = df[df['pam_class'] == pam_class]
+#             sgRNA_start_indices[pam_class] = sorted([int(x) for x in (df_tmp['start'] + df_tmp['stop'])/2.0])
+
+#         for pam_class in sgRNA_start_indices:
+#             diffs = sorted(np.diff(sgRNA_start_indices[pam_class]))[:-len(df2.index)]
+#             x_cumsum = np.sort(diffs)
+#             y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
+#             fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, name = pam_class + ' CDF', showlegend=True), 1, 1)
+
+#         for pam_class in sgRNA_start_indices:
+#             if pam_class != 'PAMs Combined':
+#                 fig.append_trace(go.Scattergl(
+#                     x=sgRNA_start_indices[pam_class],
+#                     y=[1]*len(sgRNA_start_indices[pam_class]),
+#                     mode = 'markers',
+#                     showlegend = True,
+#                     name = pam_class + ' sgRNAs',
+#                     yaxis = 'y2',
+#                     marker=dict(symbol='triangle-down', size = 10)), 1, 2)
+
+#         profile = {}
+#         if modality == 'cas':
+#             for i in range(len(sgRNA_start_indices['PAMs Combined'])):
+#                 for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
+#                     if index in profile:
+#                         profile[index].append(value)
+#                     else:
+#                         profile[index] = [value]
+
+#             fig.append_trace(go.Scattergl(
+#                 x=sorted(profile.keys()),
+#                 y=[max(profile[x]) for x in sorted(profile.keys())],
+#                 fill='tozeroy',
+#                 mode = 'lines',
+#                 showlegend=False,
+#                 yaxis = 'y2',
+#                 line=dict(color='grey', width = 0)), 1, 2)
+
+#         else:
+#             for i in range(len(sgRNA_start_indices['PAMs Combined'])):
+#                 for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
+#                     index = int(math.ceil(index/20.0))*20
+#                     if index in profile:
+#                         profile[index].append(value)
+#                     else:
+#                         profile[index] = [value]
+
+#             fig.append_trace(go.Scattergl(
+#                 x=[x for x in sorted(profile.keys())],
+#                 y=[max(profile[x]) for x in sorted(profile.keys())],
+#                 fill='tozeroy',
+#                 mode = 'lines',
+#                 showlegend=False,
+#                 yaxis = 'y2',
+#                 line=dict(color='grey', width = 0)), 1, 2)
+
+#         for index,row in df2.iterrows():
+#             if row[0] == chrom:
+#                 if len(row) > 3:
+#                     fig.append_trace(go.Scatter(
+#                         x=[row[1], row[2]],
+#                         y=[-0.5, -0.5],
+#                         mode = 'lines',
+#                         name = row[3],
+#                         yaxis = 'y2',
+#                         line=dict(color='black', width = 10)), 1, 2)
+
+#                 else:
+#                     fig.append_trace(go.Scatter(
+#                         x=[row[1], row[2]],
+#                         y=[-0.5, -0.5],
+#                         mode = 'lines',
+#                         name = '_'.join(map(str, row)),
+#                         yaxis = 'y2',
+#                         line=dict(color='black', width = 10)), 1, 2)
+
+#         data_dict3['design-clicks'] += 1
+#         data_dict3['checkbutton'] = design_n_clicks + 1
+#         data_dict3['deisgned'] = True
+
+#         with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+#             new_json_string = json.dumps(data_dict3)
+#             f.write(new_json_string + '\n')
+
+#         try:
+#             start = int(start)
+#             stop = int(stop)
+#             fig['layout'].update(
+#                 height=500,
+#                 autosize = True,
+#                 xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
+#                 xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
+#                 yaxis={'title': 'Cumulative Fraction'},
+#                 yaxis2={'showgrid': False, 'zeroline':False, 'tickvals':[-0.5, 0.15, 0.25, 0.35, 1], 'ticktext':['Regions','Coverage','Perturbation','Expected','sgRNAs'], 'range':[-0.6, 1.1]},
+#                 hovermode='closest')
+
+#         except:
+#             fig['layout'].update(
+#                 height=500,
+#                 autosize = True,
+#                 xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
+#                 xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
+#                 yaxis={'title': 'Cumulative Fraction'},
+#                 yaxis2={'showgrid': False, 'zeroline':False, 'tickvals':[-0.5, 0.15, 0.25, 0.35, 1], 'ticktext':['Regions','Coverage','Perturbation','Expected','sgRNAs'], 'range':[-0.6, 1.1]},
+#                 hovermode='closest')
+
+#         stop_time = time.time()
+
+#         print 'TIME: %s' % (stop_time - start_time)
+
+#         return fig
+
 @app3.callback(
-    Output('design-plot', 'figure'),
-    [Input('update-design-plot', 'n_clicks'),
-    Input('start','type')],
+    Output('tmp2', 'children'),
     state=[
-    State('chr', 'value'),
-    State('start', 'value'),
-    State('stop', 'value'),
     State('design-button', 'n_clicks'),
-    State('custom-loading-states-1', 'style'),
-    State('modality', 'value'),
     State('url', 'pathname')],
     events=[Event('common-interval-1', 'interval')])
 
-def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop, design_n_clicks, loading_style, modality, pathname):
+def fine_file(design_n_clicks, pathname):
 
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
@@ -4119,96 +4413,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
 
     if os.path.exists(RESULTS_FOLDER + '/design_flag.txt'):
 
-        start_time = time.time()
-
         sb.call('rm %s/design_flag.txt' % RESULTS_FOLDER, shell = True)
-
-        fig = tools.make_subplots(rows=1, cols=2, specs=[[{}, {}]],
-                                  shared_xaxes=False, shared_yaxes=False)
-
-        sgRNA_start_indices = {}
-        df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
-        df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
-        df = df[df['chr'] == chrom]
-        sgRNA_start_indices['PAMs Combined'] = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
-        
-        pam_classes = set(df['pam_class'])
-        for pam_class in pam_classes:
-            df_tmp = df[df['pam_class'] == pam_class]
-            sgRNA_start_indices[pam_class] = sorted([int(x) for x in (df_tmp['start'] + df_tmp['stop'])/2.0])
-
-        for pam_class in sgRNA_start_indices:
-            diffs = sorted(np.diff(sgRNA_start_indices[pam_class]))[:-len(df2.index)]
-            x_cumsum = np.sort(diffs)
-            y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
-            fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, name = pam_class + ' CDF', showlegend=True), 1, 1)
-
-        for pam_class in sgRNA_start_indices:
-            if pam_class != 'PAMs Combined':
-                fig.append_trace(go.Scattergl(
-                    x=sgRNA_start_indices[pam_class],
-                    y=[1]*len(sgRNA_start_indices[pam_class]),
-                    mode = 'markers',
-                    showlegend = True,
-                    name = pam_class + ' sgRNAs',
-                    yaxis = 'y2',
-                    marker=dict(symbol='triangle-down', size = 10)), 1, 2)
-
-        profile = {}
-        if modality == 'cas':
-            for i in range(len(sgRNA_start_indices['PAMs Combined'])):
-                for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
-                    if index in profile:
-                        profile[index].append(value)
-                    else:
-                        profile[index] = [value]
-
-            fig.append_trace(go.Scattergl(
-                x=sorted(profile.keys()),
-                y=[max(profile[x]) for x in sorted(profile.keys())],
-                fill='tozeroy',
-                mode = 'lines',
-                showlegend=False,
-                yaxis = 'y2',
-                line=dict(color='grey', width = 0)), 1, 2)
-
-        else:
-            for i in range(len(sgRNA_start_indices['PAMs Combined'])):
-                for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
-                    index = int(math.ceil(index/20.0))*20
-                    if index in profile:
-                        profile[index].append(value)
-                    else:
-                        profile[index] = [value]
-
-            fig.append_trace(go.Scattergl(
-                x=[x for x in sorted(profile.keys())],
-                y=[max(profile[x]) for x in sorted(profile.keys())],
-                fill='tozeroy',
-                mode = 'lines',
-                showlegend=False,
-                yaxis = 'y2',
-                line=dict(color='grey', width = 0)), 1, 2)
-
-        for index,row in df2.iterrows():
-            if row[0] == chrom:
-                if len(row) > 3:
-                    fig.append_trace(go.Scatter(
-                        x=[row[1], row[2]],
-                        y=[-0.5, -0.5],
-                        mode = 'lines',
-                        name = row[3],
-                        yaxis = 'y2',
-                        line=dict(color='black', width = 10)), 1, 2)
-
-                else:
-                    fig.append_trace(go.Scatter(
-                        x=[row[1], row[2]],
-                        y=[-0.5, -0.5],
-                        mode = 'lines',
-                        name = '_'.join(map(str, row)),
-                        yaxis = 'y2',
-                        line=dict(color='black', width = 10)), 1, 2)
 
         data_dict3['design-clicks'] += 1
         data_dict3['checkbutton'] = design_n_clicks + 1
@@ -4218,162 +4423,162 @@ def update_significance_plot(update_graph_clicks, chrom_opt, chrom, start, stop,
             new_json_string = json.dumps(data_dict3)
             f.write(new_json_string + '\n')
 
-        try:
-            start = int(start)
-            stop = int(stop)
-            fig['layout'].update(
-                height=500,
-                autosize = True,
-                xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
-                xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
-                yaxis={'title': 'Cumulative Fraction'},
-                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
-                hovermode='closest')
+@app3.callback(
+    Output('design-plot', 'figure'),
+    [Input('update-design-plot', 'n_clicks'),
+    Input('start','type'),
+    Input('common-interval-1','interval')],
+    state=[
+    State('chr', 'value'),
+    State('start', 'value'),
+    State('stop', 'value'),
+    State('design-button', 'n_clicks'),
+    State('custom-loading-states-1', 'style'),
+    State('modality', 'value'),
+    State('url', 'pathname')])
 
-        except:
-            fig['layout'].update(
-                height=500,
-                autosize = True,
-                xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
-                xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
-                yaxis={'title': 'Cumulative Fraction'},
-                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
-                hovermode='closest')
+def update_significance_plot(update_graph_clicks, chrom_opt, tmp_buffer, chrom, start, stop, design_n_clicks, loading_style, modality, pathname):
 
-        stop_time = time.time()
+    UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+    RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-        print 'TIME: %s' % (stop_time - start_time)
+    # # hack
+    # json_good = False
+    # while not json_good:
+    #     with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
+    #         json_string = f.readline().strip()
+    #         try:
+    #             data_dict3 = json.loads(json_string)
+    #             json_good = True
+    #         except:
+    #             pass
 
-        return fig
+    start_time = time.time()
 
-    elif (update_graph_clicks > 0) and (loading_style == {'display': 'none'}):
+    # sb.call('rm %s/design_flag.txt' % RESULTS_FOLDER, shell = True)
 
-        start_time = time.time()
+    fig = tools.make_subplots(rows=1, cols=2, specs=[[{}, {}]],
+                              shared_xaxes=False, shared_yaxes=False)
 
-        sb.call('rm %s/design_flag.txt' % RESULTS_FOLDER, shell = True)
+    sgRNA_start_indices = {}
+    df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
+    df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
+    df = df[df['chr'] == chrom]
+    sgRNA_start_indices['PAMs Combined'] = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
+    
+    pam_classes = set(df['pam_class'])
+    for pam_class in pam_classes:
+        df_tmp = df[df['pam_class'] == pam_class]
+        sgRNA_start_indices[pam_class] = sorted([int(x) for x in (df_tmp['start'] + df_tmp['stop'])/2.0])
 
-        fig = tools.make_subplots(rows=1, cols=2, specs=[[{}, {}]],
-                                  shared_xaxes=False, shared_yaxes=False)
+    for pam_class in sgRNA_start_indices:
+        diffs = sorted(np.diff(sgRNA_start_indices[pam_class]))[:-len(df2.index)]
+        x_cumsum = np.sort(diffs)
+        y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
+        fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, name = pam_class + ' CDF', showlegend=True), 1, 1)
 
-        sgRNA_start_indices = {}
-        df = pd.read_csv(RESULTS_FOLDER + '/SURF_designed_sgRNAs.csv')
-        df2 = pd.read_csv(UPLOADS_FOLDER + '/target_regions.csv', header = None)
-        df = df[df['chr'] == chrom]
-        sgRNA_start_indices['PAMs Combined'] = sorted([int(x) for x in (df['start'] + df['stop'])/2.0])
-        
-        pam_classes = set(df['pam_class'])
-        for pam_class in pam_classes:
-            df_tmp = df[df['pam_class'] == pam_class]
-            sgRNA_start_indices[pam_class] = sorted([int(x) for x in (df_tmp['start'] + df_tmp['stop'])/2.0])
-
-        for pam_class in sgRNA_start_indices:
-            diffs = sorted(np.diff(sgRNA_start_indices[pam_class]))[:-len(df2.index)]
-            x_cumsum = np.sort(diffs)
-            y_cumsum = np.array(range(len(diffs)))/float(len(diffs))
-            fig.append_trace(go.Scatter(x=x_cumsum, y=y_cumsum, name = pam_class + ' CDF', showlegend=True), 1, 1)
-
-        for pam_class in sgRNA_start_indices:
-            if pam_class != 'PAMs Combined':
-                fig.append_trace(go.Scattergl(
-                    x=sgRNA_start_indices[pam_class],
-                    y=[1]*len(sgRNA_start_indices[pam_class]),
-                    mode = 'markers',
-                    showlegend = True,
-                    name = pam_class + ' sgRNAs',
-                    yaxis = 'y2',
-                    marker=dict(symbol='triangle-down', size = 10)), 1, 2)
-
-        profile = {}
-        if modality == 'cas':
-            for i in range(len(sgRNA_start_indices['PAMs Combined'])):
-                for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
-                    if index in profile:
-                        profile[index].append(value)
-                    else:
-                        profile[index] = [value]
-
+    for pam_class in sgRNA_start_indices:
+        if pam_class != 'PAMs Combined':
             fig.append_trace(go.Scattergl(
-                x=sorted(profile.keys()),
-                y=[max(profile[x]) for x in sorted(profile.keys())],
-                fill='tozeroy',
-                mode = 'lines',
-                showlegend=False,
+                x=sgRNA_start_indices[pam_class],
+                y=[1]*len(sgRNA_start_indices[pam_class]),
+                mode = 'markers',
+                showlegend = True,
+                name = pam_class + ' sgRNAs',
                 yaxis = 'y2',
-                line=dict(color='grey', width = 0)), 1, 2)
+                marker=dict(symbol='triangle-down', size = 10)), 1, 2)
 
-        else:
-            for i in range(len(sgRNA_start_indices['PAMs Combined'])):
-                for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
-                    index = int(math.ceil(index/20.0))*20
-                    if index in profile:
-                        profile[index].append(value)
-                    else:
-                        profile[index] = [value]
-
-            fig.append_trace(go.Scattergl(
-                x=[x for x in sorted(profile.keys())],
-                y=[max(profile[x]) for x in sorted(profile.keys())],
-                fill='tozeroy',
-                mode = 'lines',
-                showlegend=False,
-                yaxis = 'y2',
-                line=dict(color='grey', width = 0)), 1, 2)
-
-        for index,row in df2.iterrows():
-            if row[0] == chrom:
-                if len(row) > 3:
-                    fig.append_trace(go.Scatter(
-                        x=[row[1], row[2]],
-                        y=[-0.5, -0.5],
-                        mode = 'lines',
-                        name = row[3],
-                        yaxis = 'y2',
-                        line=dict(color='black', width = 10)), 1, 2)
-
+    profile = {}
+    if modality == 'cas':
+        for i in range(len(sgRNA_start_indices['PAMs Combined'])):
+            for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(range(-30, 31))], [x/2.0 for x in gaussian_pattern(7, 1, 30)]):
+                if index in profile:
+                    profile[index].append(value)
                 else:
-                    fig.append_trace(go.Scatter(
-                        x=[row[1], row[2]],
-                        y=[-0.5, -0.5],
-                        mode = 'lines',
-                        name = '_'.join(map(str, row)),
-                        yaxis = 'y2',
-                        line=dict(color='black', width = 10)), 1, 2)
+                    profile[index] = [value]
 
-        data_dict3['design-clicks'] += 1
-        data_dict3['checkbutton'] = design_n_clicks + 1
-        data_dict3['deisgned'] = True
+        fig.append_trace(go.Scattergl(
+            x=sorted(profile.keys()),
+            y=[max(profile[x]) for x in sorted(profile.keys())],
+            fill='tozeroy',
+            mode = 'lines',
+            showlegend=False,
+            yaxis = 'y2',
+            line=dict(color='grey', width = 0)), 1, 2)
 
-        with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
-            new_json_string = json.dumps(data_dict3)
-            f.write(new_json_string + '\n')
+    else:
+        for i in range(len(sgRNA_start_indices['PAMs Combined'])):
+            for index, value in zip([x+sgRNA_start_indices['PAMs Combined'][i] for x in list(np.arange(-380, 400, 20))], [x/2.0 for x in gaussian_pattern(200, 20, 400)]):
+                index = int(math.ceil(index/20.0))*20
+                if index in profile:
+                    profile[index].append(value)
+                else:
+                    profile[index] = [value]
 
-        try:
-            start = int(start)
-            stop = int(stop)
-            fig['layout'].update(
-                height=500,
-                autosize = True,
-                xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
-                xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
-                yaxis={'title': 'Cumulative Fraction'},
-                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
-                hovermode='closest')
+        fig.append_trace(go.Scattergl(
+            x=[x for x in sorted(profile.keys())],
+            y=[max(profile[x]) for x in sorted(profile.keys())],
+            fill='tozeroy',
+            mode = 'lines',
+            showlegend=False,
+            yaxis = 'y2',
+            line=dict(color='grey', width = 0)), 1, 2)
 
-        except:
-            fig['layout'].update(
-                height=500,
-                autosize = True,
-                xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
-                xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
-                yaxis={'title': 'Cumulative Fraction'},
-                yaxis2={'showgrid': False, 'zeroline':False, 'autorange':True, 'tickvals':[-0.5, 0.25, 1], 'ticktext':['Targets','Profiles','sgRNAs']},
-                hovermode='closest')
+    for index,row in df2.iterrows():
+        if row[0] == chrom:
+            if len(row) > 3:
+                fig.append_trace(go.Scatter(
+                    x=[row[1], row[2]],
+                    y=[-0.5, -0.5],
+                    mode = 'lines',
+                    name = row[3],
+                    yaxis = 'y2',
+                    line=dict(color='black', width = 10)), 1, 2)
 
-        stop_time = time.time()
+            else:
+                fig.append_trace(go.Scatter(
+                    x=[row[1], row[2]],
+                    y=[-0.5, -0.5],
+                    mode = 'lines',
+                    name = '_'.join(map(str, row)),
+                    yaxis = 'y2',
+                    line=dict(color='black', width = 10)), 1, 2)
 
-        print 'TIME: %s' % (stop_time - start_time)
+    # data_dict3['design-clicks'] += 1
+    # data_dict3['checkbutton'] = design_n_clicks + 1
+    # data_dict3['deisgned'] = True
 
-        return fig
+    # with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
+    #     new_json_string = json.dumps(data_dict3)
+    #     f.write(new_json_string + '\n')
+
+    try:
+        start = int(start)
+        stop = int(stop)
+        fig['layout'].update(
+            height=500,
+            autosize = True,
+            xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
+            xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
+            yaxis={'title': 'Cumulative Fraction'},
+            yaxis2={'showgrid': False, 'zeroline':False, 'tickvals':[-0.5, 0.15, 0.25, 0.35, 1], 'ticktext':['Regions','Coverage','Perturbation','Expected','sgRNAs'], 'range':[-0.6, 1.1]},
+            hovermode='closest')
+
+    except:
+        fig['layout'].update(
+            height=500,
+            autosize = True,
+            xaxis={'domain':[0, 0.25], 'title': 'Distance Between Consecutive sgRNAs'},
+            xaxis2={'domain':[0.35, 1.0], 'type': 'linear', 'zeroline':False, 'title': 'Genomic Coordinate', 'showgrid': False},
+            yaxis={'title': 'Cumulative Fraction'},
+            yaxis2={'showgrid': False, 'zeroline':False, 'tickvals':[-0.5, 0.15, 0.25, 0.35, 1], 'ticktext':['Regions','Coverage','Perturbation','Expected','sgRNAs'], 'range':[-0.6, 1.1]},
+            hovermode='closest')
+
+    stop_time = time.time()
+
+    print 'TIME: %s' % (stop_time - start_time)
+
+    return fig
 
 ### CALLBACKS FOR DOWNLOAD
 @app3.callback(

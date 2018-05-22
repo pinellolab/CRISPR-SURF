@@ -18,7 +18,7 @@ To get a local copy of CRISPR-SURF, simply execute the following command:
 The CRISPR-SURF Design script allows users to design sgRNAs for their CRISPR tiling screen. Run CRISPR-SURF Design in the terminal with the command:
 
 ```
-docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_design [options]
+docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_design [options]
 ```
 
 Users can specify the following options:
@@ -42,7 +42,7 @@ Users can specify the following options:
 **Example Command-Line Run**
 
 ```
-docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_design -bed /PATH/TO/BED -genome /PATH/TO/2BIT_GENOME -pams [ATCG]GG TTT[ACG] -orient left right -guide_l 20 -g_constraint false -out example_run
+docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_design -bed /PATH/TO/BED -genome /PATH/TO/2BIT_GENOME -pams [ATCG]GG TTT[ACG] -orient left right -guide_l 20 -g_constraint false -out example_run
 ```
 
 ## CRISPR-SURF Count
@@ -50,7 +50,7 @@ docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf 
 The CRISPR-SURF Count script generates a required input file, ```sgRNAs_summary_table.csv```, for both the CRISPR-SURF interactive website and command-line interface. Run CRISPR-SURF Count in the terminal with the command:
 
 ```
-docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count [options]
+docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_count [options]
 ```
 
 Users can specify the following options:
@@ -116,7 +116,7 @@ Required Column Names:
 
 The following command will run CRISPR-SURF Count for Option (1) on provided example data:
 ```
-docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count -f /SURF/command_line/exampleDataset/sgRNA_library_file.csv -control_fastqs /SURF/command_line/exampleDataset/rep1_neg.fastq.gz /SURF/command_line/exampleDataset/rep2_neg.fastq.gz -sample_fastqs /SURF/command_line/exampleDataset/rep1_pos.fastq.gz /SURF/command_line/exampleDataset/rep2_pos.fastq.gz -nuclease cas9 -pert indel
+docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_count -f /SURF/command_line/exampleDataset/sgRNA_library_file.csv -control_fastqs /SURF/command_line/exampleDataset/rep1_neg.fastq.gz /SURF/command_line/exampleDataset/rep2_neg.fastq.gz -sample_fastqs /SURF/command_line/exampleDataset/rep1_pos.fastq.gz /SURF/command_line/exampleDataset/rep2_pos.fastq.gz -nuclease cas9 -pert indel
 ```
 
 **Run CRISPR-SURF Count Option (1) Yourself**
@@ -124,7 +124,7 @@ docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf 
 Place the sgRNA library file and FASTQs in the same directory. The control FASTQs represent the sgRNA distribution prior to selection, while the sample FASTQs represent the sgRNA distribution following selection. Assuming the sgRNA library file is named ```sgRNA_library_file.csv```, the FASTQs (2 replicates) are named ```rep1_control.fastq```, ```rep2_control.fastq```, ```rep1_sample.fastq```, ```rep2_sample.fastq```, and it's a CRISPR-Cas9 tiling screen, the command-line call would look like:
 
 ``` 
-docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count -f sgRNA_library_file.csv -control_fastqs rep1_control.fastq rep2_control.fastq -sample_fastqs rep1_sample.fastq rep2_sample.fastq -nuclease cas9 -pert indel
+docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_count -f sgRNA_library_file.csv -control_fastqs rep1_control.fastq rep2_control.fastq -sample_fastqs rep1_sample.fastq rep2_sample.fastq -nuclease cas9 -pert indel
 ```
 
 Simply change ```-pert indel``` to ```-pert crispri``` or ```-pert crispra``` for CRISPRi and CRISPRa screens, respectively.
@@ -160,7 +160,7 @@ Required Column Names:
 The following command will run CRISPR-SURF Count for Option (2) on provided example data:
 
 ```
-docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count -f /SURF/command_line/exampleDataset/sgRNA_library_file_w_counts.csv -nuclease cas9 -pert indel
+docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_count -f /SURF/command_line/exampleDataset/sgRNA_library_file_w_counts.csv -nuclease cas9 -pert indel
 ```
 
 **Run CRISPR-SURF Count Option (2) Yourself**
@@ -168,7 +168,7 @@ docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf 
 Go into the directory where the sgRNA library file is located. Assuming the sgRNA library file with counts is named ```sgRNA_library_file_w_counts.csv``` and it's a CRISPR-Cas9 tiling screen, the command-line call would look like:
 
 ``` 
-docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_count -f sgRNA_library_file_w_counts.csv -nuclease cas9 -pert indel
+docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_count -f sgRNA_library_file_w_counts.csv -nuclease cas9 -pert indel
 ```
 
 Simply change ```-pert indel``` to ```-pert crispri``` or ```-pert crispra``` for CRISPRi and CRISPRa screens, respectively.
@@ -192,7 +192,7 @@ After execution of the command, the user will have a local instance of the websi
 The CRISPR-SURF command-line interface takes ```sgRNAs_summary_table.csv``` (generated from CRISPR-SURF Count) as input. Run the CRISPR-SURF command-line tool in the terminal with the command:
 
 ```
-docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_deconvolution [options]
+docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_deconvolution [options]
 ```
 
 Users can specify the following options:
@@ -235,7 +235,7 @@ Users can specify the following options:
 
 The following command will run CRISPR-SURF analysis on provided example data:
 ```
-docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_deconvolution -f /SURF/command_line/exampleDataset/sgRNAs_summary_table.csv -pert cas9
+docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_deconvolution -f /SURF/command_line/exampleDataset/sgRNAs_summary_table.csv -pert cas9
 ```
 
 **Run CRISPR-SURF Command-Line Interface (2) Yourself**
@@ -243,7 +243,7 @@ docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf 
 Go into the directory where the sgRNAs summary table is located. Assuming the sgRNAs summary table is named                   ```sgRNAs_summary_table.csv``` and it's a CRISPR-Cas9 tiling screen, the command-line call would look like:
 
 ```
-docker run -v $PWD:/CRISPR-SURF/SURF -w /CRISPR-SURF/SURF pinellolab/crisprsurf SURF_deconvolution -f sgRNAs_summary_table.csv -pert cas9
+docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_deconvolution -f sgRNAs_summary_table.csv -pert cas9
 ```
 
 Simply change ```-pert cas9``` to ```-pert crispri``` or ```-pert crispra``` for CRISPRi and CRISPRa screens, respectively.

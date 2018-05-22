@@ -4142,12 +4142,10 @@ def update_container(n_clicks, significance_container, pams, pathname):
 
     # First time analysis
     if n_clicks == data_dict3['checkbutton']:
-        print 'fasttttttttttttttt'
         # return max(500*int(float(bp_tiled)/10000.0)*(1+0.01*len(df.index))*len(pams), 5000)
         return 500
 
     else:
-        print 'slowwwwwwwwwwwwwww'
         return 2000000000
 
 # @app3.callback(
@@ -4492,20 +4490,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, tmp_buffer, chrom, 
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-    # # hack
-    # json_good = False
-    # while not json_good:
-    #     with open(UPLOADS_FOLDER + '/data3.json', 'r') as f:
-    #         json_string = f.readline().strip()
-    #         try:
-    #             data_dict3 = json.loads(json_string)
-    #             json_good = True
-    #         except:
-    #             pass
-
     start_time = time.time()
-
-    # sb.call('rm %s/design_flag.txt' % RESULTS_FOLDER, shell = True)
 
     fig = tools.make_subplots(rows=1, cols=2, specs=[[{}, {}]],
                               shared_xaxes=False, shared_yaxes=False)
@@ -4531,7 +4516,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, tmp_buffer, chrom, 
         if pam_class != 'PAMs Combined':
             fig.append_trace(go.Scattergl(
                 x=sgRNA_start_indices[pam_class],
-                y=[1]*len(sgRNA_start_indices[pam_class]),
+                y=[1.0]*len(sgRNA_start_indices[pam_class]),
                 mode = 'markers',
                 showlegend = True,
                 name = pam_class + ' sgRNAs',
@@ -4593,14 +4578,6 @@ def update_significance_plot(update_graph_clicks, chrom_opt, tmp_buffer, chrom, 
                     name = '_'.join(map(str, row)),
                     yaxis = 'y2',
                     line=dict(color='black', width = 10)), 1, 2)
-
-    # data_dict3['design-clicks'] += 1
-    # data_dict3['checkbutton'] = design_n_clicks + 1
-    # data_dict3['deisgned'] = True
-
-    # with open(UPLOADS_FOLDER + '/data3.json', 'w') as f:
-    #     new_json_string = json.dumps(data_dict3)
-    #     f.write(new_json_string + '\n')
 
     try:
         start = int(start)

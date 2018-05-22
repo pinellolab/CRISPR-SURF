@@ -10,18 +10,18 @@ from bioutilities import Genome_2bit, Coordinate
 
 ##### Argument handeling
 parser = argparse.ArgumentParser(description = 'Find sgRNAs across genomic regions for CRISPR tiling screen')
-parser.add_argument('-f', '--f', required = True, type = str, help = 'Input bed file to make DNA excisions.')
+parser.add_argument('-bed', '--bed', required = True, type = str, help = 'Input bed file to make DNA excisions.')
 parser.add_argument('-genome', '--genome', required = True, type = str, help = 'Input genome 2bit file.')
 parser.add_argument('-pams', '--pams', required = True, type = str, nargs = '+', default = [], help = 'Specification of different CRISPR PAMs ([ATCG]GG, TTT[ACG, etc.]).')
 parser.add_argument('-orient', '--orientations', required = True, choices = ['left', 'right'], type = str, nargs = '+', default = [], help = 'Orientation of spacer relative to PAM (Cas9 -> left, Cpf1 -> right).')
 parser.add_argument('-guide_l', '--guide_length', default = 20, type = int, help = 'Length of sgRNA')
-parser.add_argument('-g_constraint', '--g_constraint', default = 'false', choices = ['true', 'false', 'True', 'False'], help = "Constraint forcing the 5' sgRNA bp to be G base.")
-parser.add_argument('-out', '--out_dir', default = '.', type = str, help = 'Output directory.')
+parser.add_argument('-g_constraint', '--g_constraint', default = 'false', choices = ['true', 'false'], help = "Constraint forcing the 5' sgRNA bp to be G base.")
+parser.add_argument('-out', '--out_dir', default = '.', type = str, help = 'Name of output directory.')
 
 args = parser.parse_args()
 
 ##### Initialize arguments
-input_f = args.f
+input_f = args.bed
 genome = args.genome
 pams = args.pams
 spacer_orientations = args.orientations

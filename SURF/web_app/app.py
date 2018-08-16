@@ -2281,6 +2281,7 @@ def update_container(n_clicks, significance_container, pathname):
                 pass
 
     # First time analysis
+    print '--------------------------------------- TRIGGERING COMMON INTERVAL 22222222 ----------------------------------------------------'
     if n_clicks == param_dict['checkbutton2']:
         return 10000
 

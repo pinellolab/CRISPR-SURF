@@ -1694,11 +1694,10 @@ def update_chr(figure, pathname):
 
 @app.callback(
     Output('custom-loading-states-1', 'style'),
-    [Input('deconvolution-button', 'n_clicks'),
-    Input('deconvolution-container', 'style')],
+    [Input('common-interval-1', 'interval')],
     state = [State('url', 'pathname')])
 
-def update_container(n_clicks, deconvolution_container, pathname):
+def update_container(interval, pathname):
 
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
@@ -1714,11 +1713,16 @@ def update_container(n_clicks, deconvolution_container, pathname):
             except:
                 pass
 
+    print '---------------------------- TRIGGERED_LOADING ----------------------------'
+
     # First time analysis
-    if n_clicks == param_dict['checkbutton1']:
+    # if n_clicks == param_dict['checkbutton1']:
+    if (interval == 60000):
+        print '---------------------------- SHOW_LOADING ----------------------------'
         return {'display': 'block'}
 
     else:
+        print '---------------------------- HIDE_LOADING ----------------------------'
         return {'display': 'none'}
 
 @app.callback(
@@ -1772,7 +1776,7 @@ def update_container(n_clicks, deconvolution_container, pathname):
 
     # First time analysis
     if n_clicks == param_dict['checkbutton1']:
-        return 10000
+        return 60000
 
     else:
         return 2000000000
@@ -2204,11 +2208,10 @@ def find_regions(n_clicks, pathname): #n_clicks, pert_range, scale, limit, gamma
 
 @app.callback(
     Output('custom-loading-states-2', 'style'),
-    [Input('significance-button', 'n_clicks'),
-    Input('significance-container', 'style')],
+    [Input('common-interval-2', 'interval')],
     state = [State('url', 'pathname')])
 
-def update_container(n_clicks, significance_container, pathname):
+def update_container(interval, pathname):
 
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
@@ -2225,7 +2228,8 @@ def update_container(n_clicks, significance_container, pathname):
                 pass
 
     # First time analysis
-    if n_clicks == param_dict['checkbutton2']:
+    # if n_clicks == param_dict['checkbutton2']:
+    if (interval == 60000):
         return {'display': 'block'}
 
     else:
@@ -2281,9 +2285,8 @@ def update_container(n_clicks, significance_container, pathname):
                 pass
 
     # First time analysis
-    print '--------------------------------------- TRIGGERING COMMON INTERVAL 22222222 ----------------------------------------------------'
     if n_clicks == param_dict['checkbutton2']:
-        return 10000
+        return 60000
 
     else:
         return 2000000000

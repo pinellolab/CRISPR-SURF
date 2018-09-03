@@ -227,7 +227,7 @@ app.layout = html.Div([
         tabs=[
             {'label': 'Step 1: Upload sgRNA Table', 'value': 'upload'},
             {'label': 'Step 2: Analysis Parameters', 'value': 'parameters'},
-            {'label': 'Step 3: Run CRISPR-SURF', 'value': 'deconvolution'},
+            {'label': 'Step 3: Perform Deconvolution', 'value': 'deconvolution'},
             {'label': 'Step 4: Find Regions', 'value': 'significance'},
             {'label': 'Step 5: Download Results', 'value': 'download'}
         ],
@@ -242,6 +242,16 @@ app.layout = html.Div([
         html.H3('Upload sgRNA Summary Table'),
 
         html.Button(id = 'example-data-button', children = 'Load Example Data', n_clicks = 0),
+
+        html.A(
+            html.Button('Download Example Data'),
+            id='download-example',
+            download = "sgRNAs_summary_table.csv",
+            href="",
+            target="_blank",
+            n_clicks = 0,
+            style = {'font-weight':'bold', 'font-size':'100%', 'text-align':'center'}
+        ),
 
         html.Label(id = 'upload-log', children = 'Upload Status: Incomplete', style = {'font-weight':'bold'}),
 
@@ -286,13 +296,13 @@ app.layout = html.Div([
                         dcc.Dropdown(
                             id = 'pert',
                             options=[
-                                {'label': 'CRISPR-Cas9', 'value': 'cas9'},
-                                {'label': 'CRISPR-Cpf1', 'value': 'cpf1'},
+                                {'label': 'CRISPR-Cas Nuclease', 'value': 'nuclease'},
                                 {'label': 'CRISPR Interference', 'value': 'crispri'},
                                 {'label': 'CRISPR Activation', 'value': 'crispra'},
-                                {'label': 'Base Editor', 'value': 'be'}
+                                {'label': 'Base Editor', 'value': 'be'},
+                                {'label': 'CRISPR-Cas9 Average Indel Profile', 'value': 'cas9_indel_profile'},
                             ],
-                            value = 'cas9',
+                            value = 'nuclease',
                         ),
 
                         ], className = 'four columns'),
@@ -371,7 +381,7 @@ app.layout = html.Div([
                             value = 1
                             ),
 
-                        html.Label('Gamma List (i.e. 1,2,3,4,5)', style = {'font-weight':'bold'}),
+                        html.Label('Lambda List (i.e. 1,2,3,4,5)', style = {'font-weight':'bold'}),
                         dcc.Input(
                             id = 'gamma_list',
                             placeholder='Use Default ...',
@@ -429,10 +439,10 @@ app.layout = html.Div([
                         html.Label(id = 'simulation-n-show', children = 'Number of Simulations: 100', style = {'font-weight':'bold'}),
                         dcc.Slider(
                             id = 'sim_n',
-                            min=10,
-                            max=1000,
-                            step=10,
-                            value = 100,
+                            min=100,
+                            max=10000,
+                            step=100,
+                            value = 1000,
                             ),
 
                         ], className = 'six columns'),
@@ -474,8 +484,8 @@ app.layout = html.Div([
                 html.Label('Limit', style = {'font-weight':'bold'}),
                 html.Div(['Maximum perturbation length (from center) of the CRISPR screening modality used.']),
 
-                html.Label('Gamma List', style = {'font-weight':'bold'}),
-                html.Div(['List of gammas to use for deconvolution computation.']),
+                html.Label('Lambda List', style = {'font-weight':'bold'}),
+                html.Div(['List of lambdas to use for deconvolution computation.']),
 
                 html.Label('Use Rapid Mode', style = {'font-weight':'bold'}),
                 html.Div(['Rapid mode aggregates null distributions across all bps. Speeds up computation at the cost of eliminating density-aware statistical tests.']),
@@ -508,7 +518,7 @@ app.layout = html.Div([
 
         # dcc.Interval(id='common-interval-1', interval=1000000),
 
-        html.H3('Run CRISPR-SURF'),
+        html.H3('Perform Deconvolution'),
 
         html.Button("Let's SURF!", id='deconvolution-button', n_clicks = 0),
 
@@ -1072,6 +1082,33 @@ def display_content(value, pathname):
         return {'display':'none'}
 
 # CALLBACKS FOR UPLOAD
+@app.callback(
+    Output('download-example', 'href'),
+    [Input('download-example', 'n_clicks'),
+    Input('url', 'pathname')])
+
+def zip_dir(n_clicks, pathname):
+
+    if pathname:
+
+        UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+        RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+        if n_clicks > 0:
+
+            full_path = '/SURF/web_app/exampleDataset/sgRNAs_summary_table.csv'
+
+            return '/dash/urldownload%s' % full_path
+
+        else:
+            full_path = '/SURF/web_app/exampleDataset/sgRNAs_summary_table.csv'
+            return '/dash/urldownload%s' % full_path
+
+@app.server.route('/dash/urldownload/SURF/web_app/exampleDataset/sgRNAs_summary_table.csv')
+def generate_report_url_exampledata():
+
+    return send_file('/SURF/web_app/exampleDataset/sgRNAs_summary_table.csv', attachment_filename = 'sgRNAs_summary_table.csv', as_attachment = True)
+
 @app.callback(Output('upload-log', 'children'),
               [Input('upload-data', 'contents'),
                Input('upload-data', 'filename'),
@@ -1377,7 +1414,7 @@ def update_perturbation_range_label(perturbation_type, tabs, original_range, pat
 
     if tabs == 'parameters':
 
-        if perturbation_type == 'cas9' or perturbation_type == 'cpf1':
+        if perturbation_type == 'nuclease':
             return 7
 
         elif perturbation_type == 'crispri' or perturbation_type == 'crispra':
@@ -1385,6 +1422,9 @@ def update_perturbation_range_label(perturbation_type, tabs, original_range, pat
 
         elif perturbation_type == 'be':
             return 5
+
+        elif perturbation_type == 'cas9_indel_profile':
+            return 7
 
     else:
         return original_range
@@ -1396,26 +1436,37 @@ def update_perturbation_range_label(perturbation_type, tabs, original_range, pat
 
 def update_perturbation_range_label(perturbation_range, pathname):
 
-    return 'Characteristic Perturbation Length: %s bps' % int(perturbation_range)
+    return 'Characteristic Perturbation Length: %s bps' % (perturbation_range)
 
 @app.callback(Output('perturbation-profile', 'figure'),
-              [Input('range', 'value')])
+              [Input('range', 'value')],
+              state = [State('pert', 'value')])
 
-def update_perturbation_profile_figure(perturbation_range):
+def update_perturbation_profile_figure(perturbation_range, perturbation_type):
 
-    try:
-        scale = 1
-        limit =  perturbation_range*3
-        perturbation_profile = gaussian_pattern(characteristic_perturbation_range = perturbation_range, scale = scale, limit = limit)
+    if perturbation_type == 'cas9_indel_profile':
+        perturbation_profile = [0.005291005,0.015873016,0.021164021,0.031746032,0.031746032,0.031746032,0.047619048,0.042328042,0.047619048,0.068783069,0.063492063,0.068783069,0.095238095,0.08994709,0.095238095,0.126984127,0.121693122,0.126984127,0.158730159,0.153439153,0.158730159,0.206349206,0.19047619,0.201058201,0.26984127,0.28042328,0.264550265,0.28042328,0.44973545,0.544973545,1,0.544973545,0.44973545,0.28042328,0.264550265,0.28042328,0.26984127,0.201058201,0.19047619,0.206349206,0.158730159,0.153439153,0.158730159,0.126984127,0.121693122,0.126984127,0.095238095,0.08994709,0.095238095,0.068783069,0.063492063,0.068783069,0.047619048,0.042328042,0.047619048,0.031746032,0.031746032,0.031746032,0.021164021,0.015873016,0.005291005]
 
-        trace = [go.Scatter(
-            x= range(-limit, limit + 1),
+        trace = [go.Bar(
+            x= range(-30, 30 + 1),
             y = perturbation_profile,
-            fill='tozeroy'
+            # fill='tozeroy'
             )]
 
-    except:
-        trace = []
+    else:
+        try:
+            scale = 1
+            limit =  perturbation_range*3
+            perturbation_profile = gaussian_pattern(characteristic_perturbation_range = perturbation_range, scale = scale, limit = limit)
+
+            trace = [go.Bar(
+                x= range(-limit, limit + 1),
+                y = perturbation_profile,
+                # fill='tozeroy'
+                )]
+
+        except:
+            trace = []
 
     return {
         'data': trace,
@@ -1459,7 +1510,7 @@ def update_perturbation_range_label(scale, pathname):
 
 def update_perturbation_range_label(perturbation_type, pathname):
 
-    if perturbation_type == 'cas9' or perturbation_type == 'cpf1':
+    if perturbation_type == 'nuclease':
         return 25
 
     elif perturbation_type == 'crispri' or perturbation_type == 'crispra':
@@ -1468,13 +1519,16 @@ def update_perturbation_range_label(perturbation_type, pathname):
     elif perturbation_type == 'be':
         return 10
 
+    if perturbation_type == 'cas9_indel_profile':
+        return 30
+
 @app.callback(Output('replicate-correlation', 'value'),
               [Input('pert', 'value')],
               state = [State('url', 'pathname')])
 
 def update_replicate_correlation(perturbation_type, pathname):
 
-    if perturbation_type == 'cas9' or perturbation_type == 'cpf1':
+    if perturbation_type == 'nuclease' or perturbation_type == 'cas9_indel_profile':
         return 0.8
 
     elif perturbation_type == 'crispri' or perturbation_type == 'crispra':
@@ -1610,7 +1664,10 @@ def perform_deconvolution(n_clicks, range_val, scale_val, limit_val, gamma_list,
                 except:
                     pass
 
-        perturbation_profile = gaussian_pattern(characteristic_perturbation_range = range_val, scale = scale_val, limit = limit_val)
+        if range_val == 'cas9_indel_profile':
+            perturbation_profile = [0.005291005,0.015873016,0.021164021,0.031746032,0.031746032,0.031746032,0.047619048,0.042328042,0.047619048,0.068783069,0.063492063,0.068783069,0.095238095,0.08994709,0.095238095,0.126984127,0.121693122,0.126984127,0.158730159,0.153439153,0.158730159,0.206349206,0.19047619,0.201058201,0.26984127,0.28042328,0.264550265,0.28042328,0.44973545,0.544973545,1,0.544973545,0.44973545,0.28042328,0.264550265,0.28042328,0.26984127,0.201058201,0.19047619,0.206349206,0.158730159,0.153439153,0.158730159,0.126984127,0.121693122,0.126984127,0.095238095,0.08994709,0.095238095,0.068783069,0.063492063,0.068783069,0.047619048,0.042328042,0.047619048,0.031746032,0.031746032,0.031746032,0.021164021,0.015873016,0.005291005]
+        else:
+            perturbation_profile = gaussian_pattern(characteristic_perturbation_range = range_val, scale = scale_val, limit = limit_val)
 
         if gamma_list == '':
 
@@ -1816,7 +1873,7 @@ def update_perturbation_range_label(replicate_correlation, figure, pathname):
         new_json_string = json.dumps(data_dict)
         f.write(new_json_string + '\n')
 
-    return 'Replicate Correlation: %s (Gamma: %s)' % (replicate_correlation, gamma_use)
+    return 'Replicate Correlation: %s (Lambda: %s)' % (replicate_correlation, gamma_use)
 
 @app.callback(Output('chr', 'value'),
               [Input('sgRNA-table-view', 'rows')],

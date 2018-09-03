@@ -22,8 +22,6 @@
 
     <title>CRISPR-SURF Help</title>
 
-
-
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -39,9 +37,116 @@
 
       <div class="starter-template">
         <h1>CRISPR-SURF Help</h1>
-        <h3>Coming Soon!</h3>
-        <h4>Check out our <a href="https://github.com/pinellolab/CRISPR-SURF" target="_blank">GitHub Page</a> in the meantime for help</h4>
+        <!-- <h3>Coming Soon!</h3> -->
+        <!-- <h4>Check out our <a href="https://github.com/pinellolab/CRISPR-SURF" target="_blank">GitHub Page</a> in the meantime for help</h4> -->
+        <h2><u>What is CRISPR-SURF?</u></h2>
+        <p>CRISPR-SURF (Screening Uncharacterized Region Function) is a deconvolution framework for the analysis of CRISPR-Cas nuclease, CRISPR interference (CRISPRi), and CRISPR activation (CRISPRa) tiling screen data. Our tool is an open-source software that can be used interactively as a web-application at <a href="crisprsurf.pinellolab.org">crisprsurf.pinellolab.org</a> or as a standalone command-line tool with Docker. Please see <a href="https://github.com/pinellolab/CRISPR-SURF">https://github.com/pinellolab/CRISPR-SURF</a> for details to run CRISPR-SURF locally as a command-line tool or interactive application.</p>
+        <br>
+        <img src="/static/crisprsurf_overview.png" width="100%">
+        <br>
+        <br>
 
+        <h2><u>Using CRISPR-SURF</u></h2>
+
+        <h3>A) Visualize several published datasets</h3>
+
+        <h4><b>1. Choose Published Dataset</b></h4>
+        <p>Under the tab <u>Visualize Datasets</u>, users can choose the dataset they are interested in visualizing from the drop-down menu.</p>
+        <img src="/static/visualize_choose.gif" width="100%">
+
+        <br>
+
+        <h4><b>2. Download IGV Session</b></h4>
+        <p>Under the tab <u>Download IGV Session</u>, users can click on the Download IGV Session button to visualize the data on the IGV browser.</p>
+
+        <br>
+        <hr>
+        <br>
+
+        <h3>B) Design your own CRISPR tiling screen</h3>
+
+        <h4><b>1. Upload Regions and Set Parameters</b></h4>
+        <p>Under the tab <u>Upload Regions and Set Parameters</u>, users can upload or input genomic regions of interest and set parameters related to the design of tiling sgRNAs (genome, PAM, sgRNA length, etc.). Multiple PAMs can be run in parallel (separated by spaces) and the formatting only allows for characters A, T, C, and G, where sets of bases or IUPAC codes can be indicated by brackets (i.e. N = [ATCG], V = [ACG], R = [AG]).</p>
+
+        <br>
+
+        <h4><b>2. Design and Visualize sgRNAs</b></h4>
+        <p>Under the tab <u>Design and Visualize sgRNAs</u>, users can click on the Design sgRNAs button to visualize the designed sgRNAs and tiling density statistics.</p>
+        <img src="/static/visualize_design.gif" width="100%">
+
+        <br>
+
+        <h4><b>3. Download sgRNA Library</b></h4>
+        <p>Under the tab <u>Download sgRNA Library</u>, users can click on the Download Files button to download a .CSV file containing information about the designed sgRNAs.</p>
+
+        <br>
+        <hr>
+        <br>
+
+        <h3>C) Analyze your CRISPR tiling screen data</h3>
+
+        <h4><b>1. Upload sgRNA Table</b></h4>
+        <p>Under the tab <u>Upload sgRNA Table</u>, users can load example data, download example data, or upload their own data to be analyzed. As seen in the example data, the formatting for own input data requires the following columns:</p>
+
+        <ul>
+          <li><b>Chr</b>: Chromosome</li>
+          <li><b>Start</b>: Genomic coordinate of sgRNA start</li>
+          <li><b>Stop</b>: Genomic coordinate sgRNA Start</li>
+          <li><b>Perturbation_Index</b>: Genomic coordinate of expected perturbation center (cleavage position for CRISPR-Cas, sgRNA center for CRISPRi/a, editing window for base-editors)</li>
+          <li><b>sgRNA_Sequence</b>: sgRNA sequence not including PAM sequence</li>
+          <li><b>Strand</b>: Targeting strand of sgRNA (+, -)</li>
+          <li><b>sgRNA_Type</b>: Type of sgRNA (observation, negative_control, positive_control)</li>
+          <li><b>Replicate1_Log2FC</b>: Replicate 1 Log2FC enrichment score of sgRNA</li>
+          <li><b>Replicate2_Log2FC</b>: Replicate 2 Log2FC enrichment score of sgRNA</li>
+        </ul>
+
+        <p><b>IMPORTANT:</b>   Minimum of two experimental replicates are needed. Additional columns (ReplicateN_Log2FC) can be included for more experimental replicates.</p>
+        <p><b>NOTE:</b>   CRISPR-SURF Count, as described on our <a href="https://github.com/pinellolab/CRISPR-SURF">Github Page</a>, can help convert raw FASTQs into the file format necessary for CRISPR-SURF deconvolution analysis.</p>
+
+        <br>
+
+        <h4><b>2. Analysis Parameters</b></h4>
+        <p>Under the tab <u>Analysis Parameters</u>, users can specify parameters to be used for data analysis. Specifying the CRISPR Perturbation Type will lead to a default Characteristic Perturbation Length and Perturbation Profile, but this parameter can be further adjusted as seen below.</p>
+        <img src="/static/analyze_parameters.gif" width="100%">
+
+        <br>
+
+        <h4><b>3. Perform Deconvolution</b></h4>
+        <p>Under the tab <u>Perform Deconvolution</u>, users can perform deconvolution analysis on their CRISPR tiling screen data.</p>
+        <p><b>NOTE:</b>   Guidelines for choosing a reasonable regularization parameter (lambda) are presented in Supplementary Note 1. We strongly recommend using the default lambda value.</p>
+        <img src="/static/analyze_deconvolution.gif" width="100%">
+
+        <br>
+
+        <h4><b>4. Find Regions</b></h4>
+        <p>Under the tab <u>Find Regions</u>, users can perform statistical analysis on their deconvolved genomic regulatory signal.</p>
+        <p><b>NOTE:</b>   We strongly recommend the parameter <i>Number of Simulations</i> to be >1000 to ensure a null distribution with reasonable sample size.</p>
+        <img src="/static/analyze_statistics.gif" width="100%">
+
+        <br>
+
+        <h4><b>5. Download Results</b></h4>
+        <p>Under the tab <u>Download Results</u>, users can download the results from their CRISPR-SURF analysis. The following files are available:</p>
+
+        <ol>
+          <li><b>sgRNAs_summary_table_updated.csv</b>: An updated sgRNAs summary table with deconvolution and p-adj. values</li>
+          <li><b>igv_session.xml</b>: An IGV session for the following tracks</li>
+            <ul>
+              <li><b>raw_scores.bedgraph</b>: sgRNA enrichment scores</li>
+              <li><b>deconvolved_scores.bedgraph</b>: deconvolution beta profile</li>
+              <li><b>positive_significant_regions.bed</b>: positive significant regions at set FDR</li>
+              <li><b>negative_significant_regions.bed</b>: negative significant regions at set FDR</li>
+              <li><b>statistical_power.bedgraph</b>: statistical power track at set effect size and FDR</li>
+            </ul>
+          <li><b>significant_regions.csv</b>: List of the significant regions and its associated statistics and supporting sgRNAs</li>
+          <li><b>beta_profile.csv</b>: Full deconvolution beta profile with associated statistics</li>
+          <li><b>correlation_curve_lambda.csv</b>: The correlation curve generated for determining lambda</li>
+          <li><b>crispr-surf_parameters.csv</b>: The CRISPR-SURF analysis parameters used during the analysis session</li>
+          <li><b>crispr-surf.log</b>: The log file for CRISPR-SURF analysis</li>
+        </ol>
+
+        <br>
+        <br>
 
       </div>
 

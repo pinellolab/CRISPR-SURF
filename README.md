@@ -213,12 +213,12 @@ Users can specify the following options:
       The method of building a null distribution for each smoothed beta score. (negative_control, gaussian, laplace | Default: gaussian)
 -sim_n, --simulation_n
       The number of simulations to perform for construction of the null distribution. (Default: 1000)
--gamma_list, --gamma_list
-      List of gammas (regularization parameter) to use during deconvolution step. If 0 (default), the --perturbation_type argument will be used to set a reasonable gamma list. Example: 1 2 3 4 5 6 7 8 9 10. (Default: 0)
--gamma, --gamma
-      The gamma to use to use during deconvolution step. If 0 (default), the --gamma_list argument will be used. (Default: 0)
+-lambda_list, --lambda_list
+      List of lambdas (regularization parameter) to use during deconvolution step. If 0 (default), the --perturbation_type argument will be used to set a reasonable lambda list. Example: 1 2 3 4 5 6 7 8 9 10. (Default: 0)
+-lambda_val, --lambda_val
+      The lambda to use to use during deconvolution step. If 0 (default), the --lambda_list argument will be used. (Default: 0)
 -corr, --correlation
-      The correlation between biological replicates to determine a reasonable gamma for the deconvolution operation. if 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate correlation.
+      The correlation between biological replicates to determine a reasonable lambda for the deconvolution operation. if 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate correlation.
 -genome, --genome
       The genome to be used to create the IGV session file. (hg19, hg38, mm9, mm10, etc. | Default: hg19)
 -effect_size, --effect_size
@@ -263,7 +263,7 @@ Simply change ```-pert cas9``` to ```-pert crispri``` or ```-pert crispra``` for
 
 **4. beta_profile.csv:** Full deconvolution beta profile with associated statistics.
 
-**5. correlation_curve_gamma.csv:** The correlation curve generated for determining gamma.
+**5. correlation_curve_lambda.csv:** The correlation curve generated for determining lambda.
 
 **6. crispr-surf_parameters.csv:** The CRISPR-SURF analysis parameters used during the analysis session.
 

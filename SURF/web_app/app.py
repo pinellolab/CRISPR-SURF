@@ -1414,7 +1414,7 @@ def update_perturbation_range_label(perturbation_type, tabs, original_range, pat
 
     if tabs == 'parameters':
 
-        if perturbation_type == 'nuclease':
+        if perturbation_type == 'nuclease' or perturbation_type == 'cas9_indel_profile':
             return 7
 
         elif perturbation_type == 'crispri' or perturbation_type == 'crispra':
@@ -1422,9 +1422,6 @@ def update_perturbation_range_label(perturbation_type, tabs, original_range, pat
 
         elif perturbation_type == 'be':
             return 5
-
-        elif perturbation_type == 'cas9_indel_profile':
-            return 7
 
     else:
         return original_range
@@ -1446,7 +1443,7 @@ def update_perturbation_profile_figure(perturbation_range, perturbation_type):
 
     if perturbation_type == 'cas9_indel_profile':
         perturbation_profile = [0.005291005,0.015873016,0.021164021,0.031746032,0.031746032,0.031746032,0.047619048,0.042328042,0.047619048,0.068783069,0.063492063,0.068783069,0.095238095,0.08994709,0.095238095,0.126984127,0.121693122,0.126984127,0.158730159,0.153439153,0.158730159,0.206349206,0.19047619,0.201058201,0.26984127,0.28042328,0.264550265,0.28042328,0.44973545,0.544973545,1,0.544973545,0.44973545,0.28042328,0.264550265,0.28042328,0.26984127,0.201058201,0.19047619,0.206349206,0.158730159,0.153439153,0.158730159,0.126984127,0.121693122,0.126984127,0.095238095,0.08994709,0.095238095,0.068783069,0.063492063,0.068783069,0.047619048,0.042328042,0.047619048,0.031746032,0.031746032,0.031746032,0.021164021,0.015873016,0.005291005]
-        
+
         trace = [go.Bar(
             x= range(-30, 30 + 1),
             y = perturbation_profile,
@@ -1510,17 +1507,14 @@ def update_perturbation_range_label(scale, pathname):
 
 def update_perturbation_range_label(perturbation_type, pathname):
 
-    if perturbation_type == 'nuclease':
-        return 25
+    if perturbation_type == 'nuclease' or perturbation_type == 'cas9_indel_profile':
+        return 30
 
     elif perturbation_type == 'crispri' or perturbation_type == 'crispra':
         return 300
 
     elif perturbation_type == 'be':
         return 10
-
-    if perturbation_type == 'cas9_indel_profile':
-        return 30
 
 @app.callback(Output('replicate-correlation', 'value'),
               [Input('pert', 'value')],
@@ -1664,7 +1658,7 @@ def perform_deconvolution(n_clicks, range_val, scale_val, limit_val, gamma_list,
                 except:
                     pass
 
-        if range_val == 'cas9_indel_profile':
+        if pert_type == 'cas9_indel_profile':
             perturbation_profile = [0.005291005,0.015873016,0.021164021,0.031746032,0.031746032,0.031746032,0.047619048,0.042328042,0.047619048,0.068783069,0.063492063,0.068783069,0.095238095,0.08994709,0.095238095,0.126984127,0.121693122,0.126984127,0.158730159,0.153439153,0.158730159,0.206349206,0.19047619,0.201058201,0.26984127,0.28042328,0.264550265,0.28042328,0.44973545,0.544973545,1,0.544973545,0.44973545,0.28042328,0.264550265,0.28042328,0.26984127,0.201058201,0.19047619,0.206349206,0.158730159,0.153439153,0.158730159,0.126984127,0.121693122,0.126984127,0.095238095,0.08994709,0.095238095,0.068783069,0.063492063,0.068783069,0.047619048,0.042328042,0.047619048,0.031746032,0.031746032,0.031746032,0.021164021,0.015873016,0.005291005]
         else:
             perturbation_profile = gaussian_pattern(characteristic_perturbation_range = range_val, scale = scale_val, limit = limit_val)

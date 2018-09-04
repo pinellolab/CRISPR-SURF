@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install build-essential zlib1g-dev -y
 
 #add Python dependencies
 RUN apt-get install libreadline-dev -y
-RUN pip install cvxpy
+RUN pip install cvxpy==0.4.11
 RUN apt-get install unzip libxml2 libxml2-dev -y
 
 #website dependencies

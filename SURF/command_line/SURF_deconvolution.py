@@ -13,7 +13,7 @@ import pandas as pd
 
 # Import CRISPR-SURF functions
 from CRISPR_SURF_Deconvolution import gaussian_pattern, crispr_surf_deconvolution
-from CRISPR_SURF_Find_Gamma import crispr_surf_find_gamma
+from CRISPR_SURF_Find_Lambda import crispr_surf_find_lambda
 from CRISPR_SURF_Statistical_Significance import crispr_surf_deconvolved_signal, crispr_surf_statistical_significance
 from CRISPR_SURF_Outputs import crispr_surf_sgRNA_summary_table_update, complete_beta_profile, crispr_surf_significant_regions, crispr_surf_IGV
 
@@ -30,9 +30,9 @@ parser.add_argument('-limit', '--limit', type = int, default = 0, help = 'Maximu
 parser.add_argument('-avg', '--averaging_method', type = str, default = 'median', choices = ['mean', 'median'], help = 'The averaging method to be performed to combine biological replicates (mean, median).')
 parser.add_argument('-sim_type', '--simulation_type', type = str, default = 'gaussian', choices = ['negative_control', 'gaussian', 'laplace'], help = 'The method of building a null distribution for each smoothed beta score (negative_control, gaussian, laplace).')
 parser.add_argument('-sim_n', '--simulation_n', type = int, default = 1000, help = 'The number of simulations to perform for construction of the null distribution.')
-parser.add_argument('-gamma_list', '--gamma_list', default = 0, nargs = '+', help = 'List of gammas (regularization parameter) to use during deconvolution step. If 0 (default), the --perturbation_type argument will be used to set a reasonable gamma list. Example: 1,2,3,4,5,6,7,8,9,10')
-parser.add_argument('-gamma', '--gamma', type = float, default = 0, help = 'The gamma to use to use during deconvolution step. If 0 (default), the --gamma_list argument will be used.')
-parser.add_argument('-corr', '--correlation', type = float, default = 0, help = 'The correlation between biological replicates to determine a reasonable gamma for the deconvolution operation. if 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate correlation.')
+parser.add_argument('-lambda_list', '--lambda_list', default = 0, nargs = '+', help = 'List of lambdas (regularization parameter) to use during deconvolution step. If 0 (default), the --perturbation_type argument will be used to set a reasonable lambda list. Example: 1,2,3,4,5,6,7,8,9,10')
+parser.add_argument('-lambda_val', '--lambda_val', type = float, default = 0, help = 'The lambda to use to use during deconvolution step. If 0 (default), the --lambda_list argument will be used.')
+parser.add_argument('-corr', '--correlation', type = float, default = 0, help = 'The correlation between biological replicates to determine a reasonable lambda for the deconvolution operation. if 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate correlation.')
 parser.add_argument('-genome', '--genome', type = str, default = 'hg19', help = 'The genome to be used to create the IGV session file (hg19, hg38, mm9, mm10, etc.).')
 parser.add_argument('-effect_size', '--effect_size', type = float, default = 1, help = 'Effect size to estimate statistical power.')
 parser.add_argument('-padjs', '--padj_cutoffs', default = 0, nargs = '+', help = 'List of p-adj. (Benjamini-Hochberg) cut-offs for determining significance of regulatory regions in the CRISPR tiling screen.')
@@ -49,8 +49,8 @@ limit = args.limit
 averaging_method = args.averaging_method
 simulation_type = args.simulation_type
 simulation_n = args.simulation_n
-gamma_list = args.gamma_list
-gamma = args.gamma
+gamma_list = args.lambda_list
+gamma = args.lambda_val
 correlation = args.correlation
 genome = args.genome
 padj_cutoffs = args.padj_cutoffs
@@ -98,8 +98,8 @@ if characteristic_perturbation_range == 0:
 # Setting default for limit parameter
 if limit == 0:
 	if (perturbation_type == 'cas9') or (perturbation_type == 'cpf1'):
-		limit = 25
-		logger.info('The limit parameter is set to default 25 bps based on Cas9/Cpf1 perturbation ...')
+		limit = 30
+		logger.info('The limit parameter is set to default 30 bps based on Cas9/Cpf1 perturbation ...')
 
 	elif (perturbation_type == 'crispri') or (perturbation_type == 'crispra'):
 		limit = 300
@@ -145,26 +145,26 @@ if gamma == 0:
 	if gamma_list == 0:
 		if characteristic_perturbation_range <= 50:
 			gamma_list = [0.02,0.04,0.06,0.08,0.1,0.2,0.4,0.6,0.8,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,12.0,14.0,16.0,18.0,20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0]
-			logger.info('The gamma list parameter is set to %s based on the characteristic perturbation range parameter of %s bps ...' % (gamma_list, characteristic_perturbation_range))
+			logger.info('The lambda list parameter is set to %s based on the characteristic perturbation range parameter of %s bps ...' % (gamma_list, characteristic_perturbation_range))
 		else:
 			gamma_list = [1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,12.0,14.0,16.0,18.0,20.0,30.0,40.0,50.0,60.0,70.0,80.0,100.0,150.0,200.0,250.0,300.0,350.0,400.0,450.0,500.0]
-			logger.info('The gamma list parameter is set to %s based on the characteristic perturbation range parameter of %s bps ...' % (gamma_list, characteristic_perturbation_range))
+			logger.info('The lambda list parameter is set to %s based on the characteristic perturbation range parameter of %s bps ...' % (gamma_list, characteristic_perturbation_range))
 
 	else:
 		try:
 			gamma_list = sorted([float(x) for x in gamma_list])
-			logger.info('The following gammas will be computed: %s ...' % (gamma_list))
+			logger.info('The following lambdas will be computed: %s ...' % (gamma_list))
 		except:
-			logger.error('The gamma list argument input could not be converted into a list. Example: 1 2 3 4 5 ...')
-			sys.exit('The gamma list argument input could not be converted into a list of floats. Example: 1 2 3 4 5 ...')
+			logger.error('The lambda list argument input could not be converted into a list. Example: 1 2 3 4 5 ...')
+			sys.exit('The lambda list argument input could not be converted into a list of floats. Example: 1 2 3 4 5 ...')
 
 else:
 	try:
 		gamma_list = [float(gamma)]
-		logger.info('The gamma parameter is set to %s ...' % (gamma_list[0]))
+		logger.info('The lambda parameter is set to %s ...' % (gamma_list[0]))
 	except:
-		logger.error('The gamma argument input could not be converted into a float.')
-		sys.exit('The gamma argument input could not be converted into a float.')
+		logger.error('The lambda argument input could not be converted into a float.')
+		sys.exit('The lambda argument input could not be converted into a float.')
 
 logger.info('Finished argument handling and setting defaults when necessary ...')
 
@@ -230,12 +230,12 @@ if len(gamma_list) == 1:
 
 else:
 	try:
-		(gamma_range, gamma_use) = crispr_surf_find_gamma(gammas2betas = gammas2betas, correlation_start = correlation, correlation_stop = correlation, correlation_opt = correlation, out_dir = out_dir)
-		logger.info('Identified gamma range to be used for downstream deconvolution statistics')
+		(gamma_range, gamma_use) = crispr_surf_find_lambda(gammas2betas = gammas2betas, correlation_start = correlation, correlation_stop = correlation, correlation_opt = correlation, out_dir = out_dir)
+		logger.info('Identified lambda range to be used for downstream deconvolution statistics')
 
 	except:
-		logger.error('Failed to identify gamma range ...')
-		sys.exit('Failed to identify gamma range ...')
+		logger.error('Failed to identify lambda range ...')
+		sys.exit('Failed to identify lambda range ...')
 
 ##### Combine biological replicate deconvolved signals
 try:
@@ -302,9 +302,9 @@ parameters = {
 'simulation_type': simulation_type,
 'replicate_parameters [loc/scale]': ' '.join(map(str, replicate_parameters)).replace(', ', '/').replace(' ', ','),
 'simulation_n': simulation_n,
-'gamma_list': ' '.join(map(str, gamma_list)),
-'gamma': gamma,
-'gamma_used': gamma_use,
+'lambda_list': ' '.join(map(str, gamma_list)),
+'lambda': gamma,
+'lambda_used': gamma_use,
 'correlation': correlation,
 'genome': genome,
 'effect_size': effect_size,

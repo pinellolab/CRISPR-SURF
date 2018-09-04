@@ -4,7 +4,7 @@ import argparse
 import ast
 import json
 
-from CRISPR_SURF_Core_WebApp import crispr_surf_deconvolution, crispr_surf_find_gamma
+from CRISPR_SURF_Core_WebApp import crispr_surf_deconvolution, crispr_surf_find_lambda
 
 parser = argparse.ArgumentParser(description = 'CRISPR-SURF deconvolution command line tool for webapp.')
 parser.add_argument('-uploads_dir', '--uploads_directory', type = str)
@@ -43,5 +43,5 @@ while not json_good:
             pass
 
 print '3 STARTING TO FIND GAMMA RANGE'
-gamma_range, gamma_use = crispr_surf_find_gamma(gammas2betas = data_dict['gammas2betas'], correlation_ratio_start = 0.5, correlation_ratio_stop = 1.0, correlation_ratio_opt = 0.8, uploads_dir = UPLOADS_FOLDER, results_dir = RESULTS_FOLDER)
+gamma_range, gamma_use = crispr_surf_find_lambda(gammas2betas = data_dict['gammas2betas'], correlation_ratio_start = 0.5, correlation_ratio_stop = 1.0, correlation_ratio_opt = 0.8, uploads_dir = UPLOADS_FOLDER, results_dir = RESULTS_FOLDER)
 print '4 FINISHED FINDING GAMMA RANGE'

@@ -66,7 +66,7 @@
         <h3>B) Design your own CRISPR tiling screen</h3>
 
         <h4><b>1. Upload Regions and Set Parameters</b></h4>
-        <p>Under the tab <u>Upload Regions and Set Parameters</u>, users can upload or input genomic regions of interest and set parameters related to the design of tiling sgRNAs (genome, PAM, sgRNA length, etc.). Multiple PAMs can be run in parallel (separated by spaces) and the formatting only allows for characters A, T, C, and G, where sets of bases or IUPAC codes can be indicated by brackets (i.e. N = [ATCG], V = [ACG], R = [AG]).</p>
+        <p>Under the tab <u>Upload Regions and Set Parameters</u>, users can upload or input genomic regions of interest and set parameters related to the design of tiling sgRNAs (genome, PAM, sgRNA length, etc.). Multiple PAMs can be run in parallel (separated by spaces) and the formatting only allows for characters A, T, C, and G, where sets of bases or IUPAC codes can be indicated by brackets (i.e. N = [ATCG], V = [ACG], R = [AG]). <u>Due to server capacity, there is a limitation of 1Mb for designing sgRNAs.</u></p>
 
         <br>
 
@@ -86,7 +86,8 @@
         <h3>C) Analyze your CRISPR tiling screen data</h3>
 
         <h4><b>1. Upload sgRNA Table</b></h4>
-        <p>Under the tab <u>Upload sgRNA Table</u>, users can load example data, download example data, or upload their own data to be analyzed. As seen in the example data, the formatting for own input data requires the following columns:</p>
+        <p>Under the tab <u>Upload sgRNA Table</u>, users can load example data, download example data, or upload their own data to be analyzed. <u>Due to server capacity, the web-application can only process tiling screens with less than 10,000 sgRNAs.</u> Please run CRISPR-SURF locally to analyze larger-scaled tiling screens.</p>
+        <p><font color='red'><b>The formatting for input data requires the <u>exact</u> column names:</b></font></p>
 
         <ul>
           <li><b>Chr</b>: Chromosome</li>

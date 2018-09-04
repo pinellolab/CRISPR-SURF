@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 pymin = min
 pyabs = abs
-from cvxpy import *
+# from cvxpy import *
 import pandas as pd
 import numpy as np
 from scipy.stats import norm

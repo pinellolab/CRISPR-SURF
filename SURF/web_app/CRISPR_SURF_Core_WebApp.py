@@ -518,7 +518,7 @@ def crispr_surf_statistical_power(sgRNA_indices, gammas2betas, effect_size, gamm
 	return beta_statistical_power
 
 # Gamma Functions #
-def crispr_surf_find_gamma(gammas2betas, correlation_ratio_start, correlation_ratio_stop, correlation_ratio_opt, uploads_dir, results_dir):
+def crispr_surf_find_lambda(gammas2betas, correlation_ratio_start, correlation_ratio_stop, correlation_ratio_opt, uploads_dir, results_dir):
 
 	"""
 	Function to find optimal gamma range to be used for regularization based on empirical simulations.
@@ -574,15 +574,15 @@ def crispr_surf_find_gamma(gammas2betas, correlation_ratio_start, correlation_ra
 	gamma_stop = gamma_list[gamma_index_stop]
 	gamma_opt = gamma_list[gamma_index_opt]
 
-	with open(results_dir + '/correlation_curve_gamma.csv', 'w') as f:
-		f.write(','.join(map(str, ['Gamma', 'Corr_Avg', 'Corr_Avg_Scaled'])) + '\n')
+	with open(results_dir + '/correlation_curve_lambda.csv', 'w') as f:
+		f.write(','.join(map(str, ['Lambda', 'Corr_Avg', 'Corr_Avg_Scaled'])) + '\n')
 
 		for i in zip(gamma_list, correlation_curve_averaged, correlation_curve_rescaled):
 			f.write(','.join(map(str, i)) + '\n')
 
 		f.write('\n')
 		f.write('Correlation Ratio:,%s' % correlation_ratio_opt + '\n')
-		f.write('Gamma Chosen:,%s' % gamma_opt + '\n')
+		f.write('Lambda Chosen:,%s' % gamma_opt + '\n')
 
 	with open(uploads_dir + '/data.json', 'r') as f:
 		json_string = f.readline().strip()

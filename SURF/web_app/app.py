@@ -30,7 +30,7 @@ import io
 import math
 
 # Import CRISPR-SURF Functions
-from CRISPR_SURF_Core_WebApp import gaussian_pattern, crispr_surf_deconvolution, crispr_surf_find_gamma, crispr_surf_deconvolved_signal, crispr_surf_statistical_significance, crispr_surf_sgRNA_summary_table_update, complete_beta_profile, crispr_surf_significant_regions, crispr_surf_IGV, str2bool, reverse_complement, total_count_normalization, median_normalization, normalize_sgRNA_counts
+from CRISPR_SURF_Core_WebApp import gaussian_pattern, crispr_surf_deconvolution, crispr_surf_find_lambda, crispr_surf_deconvolved_signal, crispr_surf_statistical_significance, crispr_surf_sgRNA_summary_table_update, complete_beta_profile, crispr_surf_significant_regions, crispr_surf_IGV, str2bool, reverse_complement, total_count_normalization, median_normalization, normalize_sgRNA_counts
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -436,7 +436,7 @@ app.layout = html.Div([
                             value = 'gaussian',
                         ),
 
-                        html.Label(id = 'simulation-n-show', children = 'Number of Simulations: 100', style = {'font-weight':'bold'}),
+                        html.Label(id = 'simulation-n-show', children = 'Number of Simulations: 1000', style = {'font-weight':'bold'}),
                         dcc.Slider(
                             id = 'sim_n',
                             min=100,

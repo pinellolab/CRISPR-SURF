@@ -141,6 +141,7 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 		# Assign relevant variables for optimization problem
 		# y = dff.lfc.tolist()
 		y = [0]*1 + dff.lfc.tolist() + [0]*1
+		# y = np.array(y).reshape(len(y), 1)
 		betas = Variable(len(np.arange(dff.pos.tolist()[0], dff.pos.tolist()[-1], scale).tolist()) + maximum_distance)
 
 		# x_shift = [int(maximum_distance + (x - dff.pos.tolist()[0])/int(scale) - 1) for x in dff.pos.tolist()]
@@ -149,12 +150,14 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 		x_shift = list(range(x_shift_tmp[0] - 1, x_shift_tmp[0])) + x_shift_tmp + list(range(x_shift_tmp[-1] + 1, x_shift_tmp[-1] + 2))
 
 		gamma = Parameter(sign = "positive")
+		# gamma = Parameter(nonneg = True)
 
 		genomic_coordinates += np.arange(int(dff.pos.tolist()[0]), int(dff.pos.tolist()[-1]) + scale, scale).tolist()
 		chromosomes_final += [dff['chr'].tolist()[0]]*len(np.arange(int(dff.pos.tolist()[0]), int(dff.pos.tolist()[-1]) + scale, scale).tolist())
 
 		# Formulate optimization problem
 		objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*sum_entries(abs(diff(betas))))
+		# objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*tv(betas))
 		p = Problem(objective)
 
 		# Solve for varying lambdas
@@ -269,16 +272,19 @@ def crispr_surf_deconvolution_simulations(negative_control_scores, sgRNA_indices
 
 				# Assign relevant variables for optimization problem
 				y = dff.lfc.tolist()
+				# y = np.array(y).reshape(len(y), 1)
 				betas = Variable(len(np.arange(dff.pos.tolist()[0], dff.pos.tolist()[-1], scale).tolist()) + maximum_distance)
 
 				x_shift = [int(maximum_distance + (x - dff.pos.tolist()[0])/int(scale)) for x in dff.pos.tolist()]
 
 				gamma = Parameter(sign = "positive")
+				# gamma = Parameter(nonneg = True)
 
 				genomic_coordinates += np.arange(int(dff.pos.tolist()[0]), int(dff.pos.tolist()[-1]) + scale, scale).tolist()
 
 				# Formulate optimization problem
 				objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*sum_entries(abs(diff(betas))))
+				# objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*tv(betas))
 				p = Problem(objective)
 
 				# Solve for varying lambdas
@@ -369,11 +375,13 @@ def crispr_surf_statistical_power(sgRNA_indices, gammas2betas, effect_size, gamm
 
 		# Assign relevant variables for optimization problem
 		y = df.lfc.tolist()
+		# y = np.array(y).reshape(len(y), 1)
 		betas = Variable(len(np.arange(df.pos.tolist()[0], df.pos.tolist()[-1], scale).tolist()) + maximum_distance)
 
 		x_shift = [int(maximum_distance + (x - df.pos.tolist()[0])/int(scale) - 1) for x in df.pos.tolist()]
 
 		gamma = Parameter(sign = "positive")
+		# gamma = Parameter(nonneg = True)
 
 		if maximum_distance%2 == 1:
 			genomic_coordinates = np.arange(int(df.pos.tolist()[0]) - int(maximum_distance/2)*scale, int(df.pos.tolist()[-1]) + int(maximum_distance/2)*scale + scale, scale).tolist()
@@ -382,6 +390,7 @@ def crispr_surf_statistical_power(sgRNA_indices, gammas2betas, effect_size, gamm
 
 		# Formulate optimization problem
 		objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*sum_entries(abs(diff(betas))))
+		# objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*tv(betas))
 		p = Problem(objective)
 
 		gamma.value = gamma_chosen

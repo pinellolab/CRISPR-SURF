@@ -436,13 +436,13 @@ app.layout = html.Div([
                             value = 'gaussian',
                         ),
 
-                        html.Label(id = 'simulation-n-show', children = 'Number of Simulations: 100', style = {'font-weight':'bold'}),
+                        html.Label(id = 'simulation-n-show', children = 'Number of Simulations: 200', style = {'font-weight':'bold'}),
                         dcc.Slider(
                             id = 'sim_n',
                             min=100,
                             max=10000,
                             step=100,
-                            value = 100,
+                            value = 200,
                             ),
 
                         ], className = 'six columns'),

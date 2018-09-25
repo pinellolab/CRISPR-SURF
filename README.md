@@ -47,7 +47,7 @@ docker run -v $PWD:$PWD -w $PWD pinellolab/crisprsurf SURF_design -bed /PATH/TO/
 
 **Running Cas-OFFinder**
 
-The off-targets from the designed sgRNAs can be enumerated with Cas-OFFinder by isolating the 4th column in the CRISPR-SURF Design output file, ```SURF_designed_sgRNAs.csv```. Instructions on running Cas-OFFinder can be found here: http://www.rgenome.net/cas-offinder/portable
+The off-targets of the designed sgRNAs can be enumerated with Cas-OFFinder by isolating the 4th column in the CRISPR-SURF Design output file, ```SURF_designed_sgRNAs.csv```. Instructions on running Cas-OFFinder can be found here: http://www.rgenome.net/cas-offinder/portable
 
 ## CRISPR-SURF Count
 

@@ -23,6 +23,9 @@ def crispr_surf_sgRNA_summary_table_update(sgRNA_summary_table, gammas2betas, av
 	p_values = []
 	padj_values = []
 
+	p_min = np.min([float(x) for x in gammas2betas['p'] if str(x) != 'nan' and float(x) > 0])
+	padj_min = np.min([float(x) for x in gammas2betas['padj'] if str(x) != 'nan' and float(x) > 0])
+
 	# Invert guideindices2bin
 	if scale > 1:
 		guideindices2bin_inverted = dict((v,k) for k in guideindices2bin for v in guideindices2bin[k])
@@ -47,8 +50,10 @@ def crispr_surf_sgRNA_summary_table_update(sgRNA_summary_table, gammas2betas, av
 
 			deconvolved_signal_combined.append(gammas2betas['combined'][closest_index])
 			if gammas2betas['p'][closest_index] == 0:
-				p_values.append('<%s' % (2.0/float(simulation_n)))
-				padj_values.append('<%s' % min(padj_cutoffs))
+				# p_values.append('<%s' % (2.0/float(simulation_n)))
+				# padj_values.append('<%s' % min(padj_cutoffs))
+				p_values.append(p_min)
+				padj_values.append(padj_min)
 			else:
 				p_values.append(gammas2betas['p'][closest_index])
 				padj_values.append(gammas2betas['padj'][closest_index])
@@ -108,9 +113,11 @@ def complete_beta_profile(gammas2betas, simulation_n, padj_cutoffs, out_dir):
 	indices = gammas2betas['indices']
 	betas = gammas2betas['combined']
 	pvals = gammas2betas['p']
-	pvals_new = [x if x != 0 else '<%s' % (2.0/float(simulation_n)) for x in pvals]
 	pvals_adj = gammas2betas['padj']
-	pvals_adj_new = [x if x != 0 else '<%s' % (min(padj_cutoffs)) for x in pvals_adj]
+	p_min = np.min([float(x) for x in gammas2betas['p'] if str(x) != 'nan' and float(x) > 0])
+	padj_min = np.min([float(x) for x in gammas2betas['padj'] if str(x) != 'nan' and float(x) > 0])
+	pvals_new = [float(x) if float(x) > 0 else p_min for x in pvals]
+	pvals_adj_new = [float(x) if float(x) > 0 else padj_min for x in pvals_adj]
 	power = gammas2betas['power']
 
 	df = pd.DataFrame({
@@ -205,6 +212,7 @@ def crispr_surf_IGV(sgRNA_summary_table, gammas2betas, padj_cutoffs, genome, sca
 	# Import sgRNA summary table
 	df_summary_table = pd.read_csv(out_dir + '/' + sgRNA_summary_table.split('/')[-1])
 	replicates = len([x for x in df_summary_table.columns.tolist() if 'Log2FC_Replicate' in x])
+	padj_min = np.min([float(x) for x in gammas2betas['padj'] if str(x) != 'nan' and float(x) > 0])
 
 	# Boundaries of inference
 	diff_vec = [0] + list(np.diff(gammas2betas['indices']))
@@ -257,7 +265,7 @@ def crispr_surf_IGV(sgRNA_summary_table, gammas2betas, padj_cutoffs, genome, sca
 	# Output raw and deconvolved scores IGV track
 	dff = df_summary_table[pd.notnull(df_summary_table['Chr']) & pd.notnull(df_summary_table['Perturbation_Index']) & pd.notnull(df_summary_table['Raw_Signal_Combined']) & pd.notnull(df_summary_table['Deconvolved_Signal_Combined'])]
 
-	with open(out_dir + '/raw_scores.bedgraph', 'w') as raw_scores, open(out_dir + '/deconvolved_scores.bedgraph', 'w') as deconvolved_scores, open(out_dir + '/statistical_power.bedgraph', 'w') as statistical_power:
+	with open(out_dir + '/raw_scores.bedgraph', 'w') as raw_scores, open(out_dir + '/deconvolved_scores.bedgraph', 'w') as deconvolved_scores, open(out_dir + '/neglog10_pvals.bedgraph', 'w') as neglog10_pvals, open(out_dir + '/statistical_power.bedgraph', 'w') as statistical_power:
 
 		for index, row in dff.iterrows():
 
@@ -266,7 +274,13 @@ def crispr_surf_IGV(sgRNA_summary_table, gammas2betas, padj_cutoffs, genome, sca
 
 		for index in range(len(gammas2betas['indices'])):
 
+			if float(gammas2betas['padj'][index]) > 0:
+				neglog10_pval = -math.log10(float(gammas2betas['padj'][index]))
+			else:
+				neglog10_pval = -math.log10(padj_min)
+
 			deconvolved_scores.write('\t'.join(map(str, [gammas2betas['chr'][index], int(gammas2betas['indices'][index]), int(gammas2betas['indices'][index]), float(gammas2betas['combined'][index])])) + '\n')
+			neglog10_pvals.write('\t'.join(map(str, [gammas2betas['chr'][index], int(gammas2betas['indices'][index]), int(gammas2betas['indices'][index]), neglog10_pval])) + '\n')
 			statistical_power.write('\t'.join(map(str, [gammas2betas['chr'][index], int(gammas2betas['indices'][index]), int(gammas2betas['indices'][index]), float(gammas2betas['power'][index])])) + '\n')
 
 	# Create IGV session

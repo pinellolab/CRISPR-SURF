@@ -60,7 +60,7 @@ def crispr_surf_deconvolved_signal(gammas2betas, gamma_chosen, averaging_method,
 
 	return gammas2betas
 
-def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, perturbation_profile, gammas2betas, simulation_type, simulation_n, guideindices2bin, averaging_method, padj_cutoffs, effect_size, limit, scale, rapid_mode):
+def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, perturbation_profile, gammas2betas, null_distribution, simulation_n, test_type, guideindices2bin, averaging_method, padj_cutoffs, effect_size, limit, scale):
 
 	"""
 	Function to assess the statistical significance of deconvolved genomic signal.
@@ -83,12 +83,12 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	# Decide how to draw from null distribution and perform deconvolution on simulated null arrays
 	logger.info('Performing %s simulations to construct beta null distributions ...' % (simulation_n))
 
-	if simulation_type == 'negative_control':
+	if null_distribution == 'negative_control':
 		if 'negative_control' not in df_summary_table['sgRNA_Type'].unique().tolist():
-			simulation_type = 'gaussian'
+			null_distribution = 'gaussian'
 
 	replicate_parameters = []
-	if simulation_type == 'negative_control':
+	if null_distribution == 'negative_control':
 
 		replicate_parameters.append('NA')
 
@@ -100,10 +100,9 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 		# Construct many simulated null arrays to perform deconvolution
 		beta_distributions_null = crispr_surf_deconvolution_simulations(negative_control_scores = ['negative_control_guides', negative_control_guide_scores], sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = [gamma_chosen], simulations_n = simulation_n, replicates = replicates, guideindices2bin = guideindices2bin, averaging_method = averaging_method, scale = scale)
 
-	elif simulation_type == 'laplace':
+	elif null_distribution == 'laplace':
 
 		# Parameterize observed signal with laplace distribution (assume majority of observation sgRNAs are null)
-		observation_median = np.median()
 		for i in range(1, int(replicates) + 1):
 
 			# # Remove distribution skew
@@ -132,7 +131,7 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 		# Construct many simulated null arrays to perform deconvolution
 		beta_distributions_null = crispr_surf_deconvolution_simulations(negative_control_scores = ['laplace', replicate_parameters], sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = [gamma_chosen], simulations_n = simulation_n, replicates = replicates, guideindices2bin = guideindices2bin, averaging_method = averaging_method, scale = scale)
 
-	elif simulation_type == 'gaussian':
+	elif null_distribution == 'gaussian':
 
 		# Parameterize observed signal with gaussian distribution (assume majority of observation sgRNAs are null)
 		for i in range(1, int(replicates) + 1):
@@ -167,47 +166,31 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	logger.info('Calculating p. values for %s betas ...' % (len(beta_distributions)))
 
 	beta_pvals = []
-	if rapid_mode.lower() in ['f', 'false', 'no']:
-		for i in range(len(beta_distributions)):
-
-			if (i + 1)%100 == 0:
-				logger.info('Calculated p. values for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
-
-			estimated_beta = beta_distributions[i]
-			null_betas = beta_distributions_null[i]
-
-			beta_pvals.append(2.0*float(max(0.0, min(sum(x >= estimated_beta for x in null_betas), sum(x <= estimated_beta for x in null_betas))))/float(len(null_betas)))
-	else:
-		null_betas = []
-
-		for i in range(len(beta_distributions_null)):
-			null_betas += beta_distributions_null[i]
-
-		null_betas = sorted(null_betas)
-		logger.info('Aggregated beta null distribution size: %s ...' % (len(null_betas)))
+	if test_type == 'nonparametric':
 
 		for i in range(len(beta_distributions)):
 
-			if (i + 1)%100 == 0:
+			if (i + 1)%500 == 0:
 				logger.info('Calculated p. values for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
 
 			estimated_beta = beta_distributions[i]
+			# null_betas = beta_distributions_null[i]
+			# beta_pvals.append(2.0*float(max(0.0, min(sum(x >= estimated_beta for x in null_betas), sum(x <= estimated_beta for x in null_betas))))/float(len(null_betas)))
 
-			# Decide which tail to calculate
-			if estimated_beta < np.median(null_betas):
+			null_betas = np.array(beta_distributions_null[i])
+			beta_pvals.append(2.0 * min((null_betas >= estimated_beta).sum(), (null_betas <= estimated_beta).sum()) / float(len(null_betas)))
 
-				for j in range(len(null_betas)):
-					if null_betas[j] > estimated_beta:
-						pval = 2.0*max(0.0, float(j))/float(len(null_betas))
-						beta_pvals.append(pval)
-						break
-			else:
+	elif test_type == 'parametric':
 
-				for j in range(len(null_betas))[::-1]:
-					if null_betas[j] < estimated_beta:
-						pval = 2.0*max(0.0, float(len(null_betas) - j - 1))/float(len(null_betas))
-						beta_pvals.append(pval)
-						break
+		for i in range(len(beta_distributions)):
+
+			if (i + 1)%500 == 0:
+				logger.info('Calculated p. values for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
+
+			estimated_beta = beta_distributions[i]
+			null_betas_loc, null_betas_scale = norm.fit(beta_distributions_null[i])
+			
+			beta_pvals.append(2.0*float(max(0.0, min([norm(loc = null_betas_loc, scale = null_betas_scale).sf(estimated_beta), 1.0 - norm(loc = null_betas_loc, scale = null_betas_scale).sf(estimated_beta)]))))
 
 	logger.info('Calculated p. values for %s out of %s betas ...' % (len(beta_distributions), len(beta_distributions)))
 
@@ -225,29 +208,21 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	else:
 		beta_corrected_effect_size = crispr_surf_statistical_power(sgRNA_indices = sgRNA_indices, gammas2betas = gammas2betas, effect_size = effect_size, gamma_chosen = gamma_chosen, perturbation_profile = perturbation_profile, scale = scale)
 
-	if rapid_mode.lower() in ['f', 'false', 'no']:
+	for i in range(len(beta_corrected_effect_size)):
 
-		for i in range(len(beta_corrected_effect_size)):
+		# shifted_distribution = [x + beta_corrected_effect_size[i] for x in beta_distributions_null[i]]
+		# percentile_cutoff = np.percentile(beta_distributions_null[i], (100.0 - float(new_p_cutoff)*100.0/2.0))
 
-			shifted_distribution = [x + beta_corrected_effect_size[i] for x in beta_distributions_null[i]]
-			percentile_cutoff = np.percentile(beta_distributions_null[i], (100.0 - float(new_p_cutoff)*100.0/2.0))
-			if (i + 1)%100 == 0:
-				logger.info('Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
+		beta_dist_null = np.array(beta_distributions_null[i])
+		shifted_distribution = beta_dist_null + beta_corrected_effect_size[i]
+		percentile_cutoff = np.percentile(beta_dist_null, (100.0 - float(new_p_cutoff)*100.0/2.0))
 
-			beta_statistical_power.append(float(sum(x >= percentile_cutoff for x in shifted_distribution))/float(len(shifted_distribution)))
+		if (i + 1)%500 == 0:
+			logger.info('Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
 
-	else:
+		# beta_statistical_power.append(float(sum(x >= percentile_cutoff for x in shifted_distribution))/float(len(shifted_distribution)))
 
-		percentile_cutoff = np.percentile(null_betas, (100.0 - float(new_p_cutoff)*100.0/2.0))
-		for i in range(len(beta_corrected_effect_size)):
-
-			for j in range(len(null_betas)):
-				if (null_betas[j] + beta_corrected_effect_size[i]) > percentile_cutoff:
-					beta_statistical_power.append(float(len(null_betas) - j)/float(len(null_betas)))
-					break
-
-			if (i + 1)%100 == 0:
-				logger.info('Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
+		beta_statistical_power.append((shifted_distribution > percentile_cutoff).sum() / float(len(shifted_distribution)))
 
 	gammas2betas['power'] = beta_statistical_power
 

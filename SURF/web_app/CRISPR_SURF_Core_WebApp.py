@@ -13,6 +13,7 @@ import scipy as sp
 import random
 import json
 import time
+from multiprocessing import Pool
 from statsmodels.sandbox.stats.multicomp import multipletests
 
 # Support Functions #
@@ -294,6 +295,127 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 
 	return gammas2betas, guideindices2bin
 
+def multiprocessing_deconvolution(argument_list):
+
+	negative_control_scores, sgRNA_indices, perturbation_profile, gamma_list, simulations_n, replicates, guideindices2bin, averaging_method, scale, rescaled_sgRNA_indices_w_obs, groups, maximum_distance = argument_list
+
+	# # Iterate through n simulations
+	# beta_distributions = {}
+	# for n in range(1, simulations_n + 1):
+
+	# 	if n%100 == 0:
+	# 		print 'Simulation %s out of %s ...' % (str(n), str(simulations_n))
+	# 		# logger.info('Simulation %s out of %s ...' % (str(n), str(simulations_n)))
+
+	replicate_store = {}
+	for r in range(replicates):
+
+		if negative_control_scores[0] == 'gaussian':
+			if scale > 1:
+				rescaled_observations = []
+				for scaled_index in rescaled_sgRNA_indices_w_obs:
+					rescaled_observations.append(np.mean(norm.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(guideindices2bin[str(scaled_index)]))))
+
+			else:
+				rescaled_observations = norm.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(rescaled_sgRNA_indices_w_obs))
+
+		elif negative_control_scores[0] == 'laplace':
+			if scale > 1:
+				rescaled_observations = []
+				for scaled_index in rescaled_sgRNA_indices_w_obs:
+					rescaled_observations.append(np.mean(laplace.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(guideindices2bin[str(scaled_index)]))))
+
+			else:
+				rescaled_observations = laplace.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(rescaled_sgRNA_indices_w_obs))
+
+		elif negative_control_scores[0] == 'negative_control_guides':
+			if scale > 1:
+				rescaled_observations = []
+				for scaled_index in rescaled_sgRNA_indices_w_obs:
+					rescaled_observations.append(np.mean(np.random.choice(negative_control_scores[1][r], len(guideindices2bin[str(scaled_index)]), replace = True)))
+
+			else:
+				rescaled_observations = np.random.choice(negative_control_scores[1][r], len(rescaled_sgRNA_indices_w_obs), replace = True)
+
+		# Set up regularized deconvolution optimization problem
+		df = pd.DataFrame({'pos':rescaled_sgRNA_indices_w_obs, 'lfc':rescaled_observations, 'group':groups})
+
+		genomic_coordinates = []
+		gammas2betas = {}
+		delete_gammas = []
+
+		# Iterate through groups and perform deconvolution
+		for group in df.group.unique():
+
+			# Filtered dataframe to separate individual groups
+			dff = df[df.group == group]
+
+			# Make sure >1 sgRNA exists per group
+			# if len(dff.index) > 1:
+
+			# Assign relevant variables for optimization problem
+			y = dff.lfc.tolist()
+			betas = Variable(len(np.arange(dff.pos.tolist()[0], dff.pos.tolist()[-1], scale).tolist()) + maximum_distance)
+
+			x_shift = [int(maximum_distance + (x - dff.pos.tolist()[0])/int(scale)) for x in dff.pos.tolist()]
+
+			gamma = Parameter(sign = "positive")
+
+			genomic_coordinates += np.arange(int(dff.pos.tolist()[0]), int(dff.pos.tolist()[-1]) + scale, scale).tolist()
+
+			# Formulate optimization problem
+			objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*sum_entries(abs(diff(betas))))
+			p = Problem(objective)
+
+			# Solve for varying lambdas
+			for g in gamma_list:
+
+				g = float(g)
+
+				# Make sure solver converges, otherwise delete gammas that fail
+				try:
+
+					if g not in gammas2betas:
+						gammas2betas[g] = []
+
+					gamma.value = g
+					result = p.solve()
+					gammas2betas[g] += np.array(betas.value).reshape(-1).tolist()[int(maximum_distance/2):-int(maximum_distance/2)]
+
+				except:
+
+					delete_gammas.append(g)
+					continue
+
+		# Delete gammas that failed to converge
+		for g in delete_gammas:
+			del gammas2betas[g]
+
+		gammas2betas['indices'] = genomic_coordinates
+
+		# Add to replicate store
+		replicate_store[r] = gammas2betas[float(gamma_list[0])]
+
+	# Create combined deconvolved signals from replicates for simulation
+	deconvolved_signal = {}
+	for i in replicate_store.keys():
+
+		for j in range(len(replicate_store[i])):
+
+			if j not in deconvolved_signal:
+				deconvolved_signal[j] = []
+
+			deconvolved_signal[j].append(replicate_store[i][j])
+
+	# Create mean or median profile
+	if averaging_method == 'mean':
+		combine_simulations = [np.mean(deconvolved_signal[x]) for x in deconvolved_signal]
+
+	elif averaging_method == 'median':
+		combine_simulations = [np.median(deconvolved_signal[x]) for x in deconvolved_signal]
+
+	return combine_simulations
+
 def crispr_surf_deconvolution_simulations(negative_control_scores, sgRNA_indices, perturbation_profile, gamma_list, simulations_n, replicates, guideindices2bin, averaging_method, scale):
 
 	"""
@@ -326,126 +448,141 @@ def crispr_surf_deconvolution_simulations(negative_control_scores, sgRNA_indices
 	for i in range(1, len(group_boundaries)):
 		groups += [i]*(group_boundaries[i] - group_boundaries[i - 1])
 
-	# Iterate through n simulations
+	# Attempt multiprocessing
+	print 'Parallelizing construction of beta null distributions made up of %s simulations ...' % str(simulations_n)
+	# logger.info('Parallelizing construction of beta null distributions made up of %s simulations ...' % str(simulations_n))
+
+	pool = Pool(processes = 4)
+	combine_simulations = pool.map(multiprocessing_deconvolution, [[negative_control_scores, sgRNA_indices, perturbation_profile, gamma_list, simulations_n, replicates, guideindices2bin, averaging_method, scale, rescaled_sgRNA_indices_w_obs, groups, maximum_distance] for i in range(simulations_n)])
+
+	# # Iterate through n simulations
+	# beta_distributions = {}
+	# for n in range(1, simulations_n + 1):
+
+	# 	if n%100 == 0:
+	# 		print 'Simulation %s out of %s ...' % (str(n), str(simulations_n))
+	# 		# logger.info('Simulation %s out of %s ...' % (str(n), str(simulations_n)))
+
+	# 	replicate_store = {}
+	# 	for r in range(replicates):
+
+	# 		if negative_control_scores[0] == 'gaussian':
+	# 			if scale > 1:
+	# 				rescaled_observations = []
+	# 				for scaled_index in rescaled_sgRNA_indices_w_obs:
+	# 					rescaled_observations.append(np.mean(norm.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(guideindices2bin[str(scaled_index)]))))
+
+	# 			else:
+	# 				rescaled_observations = norm.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(rescaled_sgRNA_indices_w_obs))
+
+	# 		elif negative_control_scores[0] == 'laplace':
+	# 			if scale > 1:
+	# 				rescaled_observations = []
+	# 				for scaled_index in rescaled_sgRNA_indices_w_obs:
+	# 					rescaled_observations.append(np.mean(laplace.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(guideindices2bin[str(scaled_index)]))))
+
+	# 			else:
+	# 				rescaled_observations = laplace.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(rescaled_sgRNA_indices_w_obs))
+
+	# 		elif negative_control_scores[0] == 'negative_control_guides':
+	# 			if scale > 1:
+	# 				rescaled_observations = []
+	# 				for scaled_index in rescaled_sgRNA_indices_w_obs:
+	# 					rescaled_observations.append(np.mean(np.random.choice(negative_control_scores[1][r], len(guideindices2bin[str(scaled_index)]), replace = True)))
+
+	# 			else:
+	# 				rescaled_observations = np.random.choice(negative_control_scores[1][r], len(rescaled_sgRNA_indices_w_obs), replace = True)
+
+	# 		# Set up regularized deconvolution optimization problem
+	# 		df = pd.DataFrame({'pos':rescaled_sgRNA_indices_w_obs, 'lfc':rescaled_observations, 'group':groups})
+
+	# 		genomic_coordinates = []
+	# 		gammas2betas = {}
+	# 		delete_gammas = []
+
+	# 		# Iterate through groups and perform deconvolution
+	# 		for group in df.group.unique():
+
+	# 			# Filtered dataframe to separate individual groups
+	# 			dff = df[df.group == group]
+
+	# 			# Make sure >1 sgRNA exists per group
+	# 			# if len(dff.index) > 1:
+
+	# 			# Assign relevant variables for optimization problem
+	# 			y = dff.lfc.tolist()
+	# 			betas = Variable(len(np.arange(dff.pos.tolist()[0], dff.pos.tolist()[-1], scale).tolist()) + maximum_distance)
+
+	# 			x_shift = [int(maximum_distance + (x - dff.pos.tolist()[0])/int(scale)) for x in dff.pos.tolist()]
+
+	# 			gamma = Parameter(sign = "positive")
+
+	# 			genomic_coordinates += np.arange(int(dff.pos.tolist()[0]), int(dff.pos.tolist()[-1]) + scale, scale).tolist()
+
+	# 			# Formulate optimization problem
+	# 			objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*sum_entries(abs(diff(betas))))
+	# 			p = Problem(objective)
+
+	# 			# Solve for varying lambdas
+	# 			for g in gamma_list:
+
+	# 				g = float(g)
+
+	# 				# Make sure solver converges, otherwise delete gammas that fail
+	# 				try:
+
+	# 					if g not in gammas2betas:
+	# 						gammas2betas[g] = []
+
+	# 					gamma.value = g
+	# 					result = p.solve()
+	# 					gammas2betas[g] += np.array(betas.value).reshape(-1).tolist()[int(maximum_distance/2):-int(maximum_distance/2)]
+
+	# 				except:
+
+	# 					delete_gammas.append(g)
+	# 					continue
+
+	# 		# Delete gammas that failed to converge
+	# 		for g in delete_gammas:
+	# 			del gammas2betas[g]
+
+	# 		gammas2betas['indices'] = genomic_coordinates
+
+	# 		# Add to replicate store
+	# 		replicate_store[r] = gammas2betas[float(gamma_list[0])]
+
+	# 	# Create combined deconvolved signals from replicates for simulation
+	# 	deconvolved_signal = {}
+	# 	for i in replicate_store.keys():
+
+	# 		for j in range(len(replicate_store[i])):
+
+	# 			if j not in deconvolved_signal:
+	# 				deconvolved_signal[j] = []
+
+	# 			deconvolved_signal[j].append(replicate_store[i][j])
+
+	# 	# Create mean or median profile
+	# 	if averaging_method == 'mean':
+	# 		combine_simulations = [np.mean(deconvolved_signal[x]) for x in deconvolved_signal]
+
+	# 	elif averaging_method == 'median':
+	# 		combine_simulations = [np.median(deconvolved_signal[x]) for x in deconvolved_signal]
+
+	# 	for i in range(len(combine_simulations)):
+	# 		try:
+	# 			beta_distributions[i].append(combine_simulations[i])
+	# 		except:
+	# 			beta_distributions[i] = [combine_simulations[i]]
+
 	beta_distributions = {}
-	for n in range(1, simulations_n + 1):
-
-		if n%100 == 0:
-			print 'Simulation %s out of %s ...' % (str(n), str(simulations_n))
-			# logger.info('Simulation %s out of %s ...' % (str(n), str(simulations_n)))
-
-		replicate_store = {}
-		for r in range(replicates):
-
-			if negative_control_scores[0] == 'gaussian':
-				if scale > 1:
-					rescaled_observations = []
-					for scaled_index in rescaled_sgRNA_indices_w_obs:
-						rescaled_observations.append(np.mean(norm.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(guideindices2bin[str(scaled_index)]))))
-
-				else:
-					rescaled_observations = norm.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(rescaled_sgRNA_indices_w_obs))
-
-			elif negative_control_scores[0] == 'laplace':
-				if scale > 1:
-					rescaled_observations = []
-					for scaled_index in rescaled_sgRNA_indices_w_obs:
-						rescaled_observations.append(np.mean(laplace.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(guideindices2bin[str(scaled_index)]))))
-
-				else:
-					rescaled_observations = laplace.rvs(loc = negative_control_scores[1][r][0], scale = negative_control_scores[1][r][1], size = len(rescaled_sgRNA_indices_w_obs))
-
-			elif negative_control_scores[0] == 'negative_control_guides':
-				if scale > 1:
-					rescaled_observations = []
-					for scaled_index in rescaled_sgRNA_indices_w_obs:
-						rescaled_observations.append(np.mean(np.random.choice(negative_control_scores[1][r], len(guideindices2bin[str(scaled_index)]), replace = True)))
-
-				else:
-					rescaled_observations = np.random.choice(negative_control_scores[1][r], len(rescaled_sgRNA_indices_w_obs), replace = True)
-
-			# Set up regularized deconvolution optimization problem
-			df = pd.DataFrame({'pos':rescaled_sgRNA_indices_w_obs, 'lfc':rescaled_observations, 'group':groups})
-
-			genomic_coordinates = []
-			gammas2betas = {}
-			delete_gammas = []
-
-			# Iterate through groups and perform deconvolution
-			for group in df.group.unique():
-
-				# Filtered dataframe to separate individual groups
-				dff = df[df.group == group]
-
-				# Make sure >1 sgRNA exists per group
-				# if len(dff.index) > 1:
-
-				# Assign relevant variables for optimization problem
-				y = dff.lfc.tolist()
-				betas = Variable(len(np.arange(dff.pos.tolist()[0], dff.pos.tolist()[-1], scale).tolist()) + maximum_distance)
-
-				x_shift = [int(maximum_distance + (x - dff.pos.tolist()[0])/int(scale)) for x in dff.pos.tolist()]
-
-				gamma = Parameter(sign = "positive")
-
-				genomic_coordinates += np.arange(int(dff.pos.tolist()[0]), int(dff.pos.tolist()[-1]) + scale, scale).tolist()
-
-				# Formulate optimization problem
-				objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*sum_entries(abs(diff(betas))))
-				p = Problem(objective)
-
-				# Solve for varying lambdas
-				for g in gamma_list:
-
-					g = float(g)
-
-					# Make sure solver converges, otherwise delete gammas that fail
-					try:
-
-						if g not in gammas2betas:
-							gammas2betas[g] = []
-
-						gamma.value = g
-						result = p.solve()
-						gammas2betas[g] += np.array(betas.value).reshape(-1).tolist()[int(maximum_distance/2):-int(maximum_distance/2)]
-
-					except:
-
-						delete_gammas.append(g)
-						continue
-
-			# Delete gammas that failed to converge
-			for g in delete_gammas:
-				del gammas2betas[g]
-
-			gammas2betas['indices'] = genomic_coordinates
-
-			# Add to replicate store
-			replicate_store[r] = gammas2betas[float(gamma_list[0])]
-
-		# Create combined deconvolved signals from replicates for simulation
-		deconvolved_signal = {}
-		for i in replicate_store.keys():
-
-			for j in range(len(replicate_store[i])):
-
-				if j not in deconvolved_signal:
-					deconvolved_signal[j] = []
-
-				deconvolved_signal[j].append(replicate_store[i][j])
-
-		# Create mean or median profile
-		if averaging_method == 'mean':
-			combine_simulations = [np.mean(deconvolved_signal[x]) for x in deconvolved_signal]
-
-		elif averaging_method == 'median':
-			combine_simulations = [np.median(deconvolved_signal[x]) for x in deconvolved_signal]
-
-		for i in range(len(combine_simulations)):
+	for i in range(len(combine_simulations)):
+		for j in range(len(combine_simulations[i])):
 			try:
-				beta_distributions[i].append(combine_simulations[i])
+				beta_distributions[j].append(combine_simulations[i][j])
 			except:
-				beta_distributions[i] = [combine_simulations[i]]
+				beta_distributions[j] = [combine_simulations[i][j]]
 
 	return beta_distributions
 
@@ -464,7 +601,7 @@ def crispr_surf_statistical_power(sgRNA_indices, gammas2betas, effect_size, gamm
 	total_betas = len(beta_indices)
 	for beta_index in range(len(beta_indices)):
 
-		if (beta_index + 1)%100 == 0:
+		if (beta_index + 1)%500 == 0:
 			print 'Estimating statistical power for %s out of %s units ...' % (str(beta_index + 1), str(total_betas))
 			# logger.info('Estimating statistical power for %s out of %s units ...' % (str(beta_index + 1), str(total_betas)))
 
@@ -648,7 +785,7 @@ def crispr_surf_deconvolved_signal(gammas2betas, gamma_chosen, averaging_method,
 
 	return gammas2betas
 
-def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, perturbation_profile, gammas2betas, simulation_type, simulation_n, guideindices2bin, averaging_method, padj_cutoffs, effect_size, limit, scale, rapid_mode, uploads_dir, results_dir):
+def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, perturbation_profile, gammas2betas, null_distribution, simulation_n, test_type, guideindices2bin, averaging_method, padj_cutoffs, effect_size, limit, scale, uploads_dir, results_dir):
 
 	"""
 	Function to assess the statistical significance of deconvolved genomic signal.
@@ -672,12 +809,12 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	print 'Performing %s simulations to construct beta null distributions ...' % (simulation_n)
 	# logger.info('Performing %s simulations to construct beta null distributions ...' % (simulation_n))
 
-	if simulation_type == 'negative_control':
+	if null_distribution == 'negative_control':
 		if 'negative_control' not in df_summary_table['sgRNA_Type'].unique().tolist():
-			simulation_type = 'gaussian'
+			null_distribution = 'gaussian'
 
 	replicate_parameters = []
-	if simulation_type == 'negative_control':
+	if null_distribution == 'negative_control':
 
 		replicate_parameters.append('NA')
 
@@ -689,10 +826,9 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 		# Construct many simulated null arrays to perform deconvolution
 		beta_distributions_null = crispr_surf_deconvolution_simulations(negative_control_scores = ['negative_control_guides', negative_control_guide_scores], sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = [gamma_chosen], simulations_n = simulation_n, replicates = replicates, guideindices2bin = guideindices2bin, averaging_method = averaging_method, scale = scale)
 
-	elif simulation_type == 'laplace':
+	elif null_distribution == 'laplace':
 
 		# Parameterize observed signal with laplace distribution (assume majority of observation sgRNAs are null)
-		observation_median = np.median()
 		for i in range(1, int(replicates) + 1):
 
 			# # Remove distribution skew
@@ -721,7 +857,7 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 		# Construct many simulated null arrays to perform deconvolution
 		beta_distributions_null = crispr_surf_deconvolution_simulations(negative_control_scores = ['laplace', replicate_parameters], sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = [gamma_chosen], simulations_n = simulation_n, replicates = replicates, guideindices2bin = guideindices2bin, averaging_method = averaging_method, scale = scale)
 
-	elif simulation_type == 'gaussian':
+	elif null_distribution == 'gaussian':
 
 		# Parameterize observed signal with gaussian distribution (assume majority of observation sgRNAs are null)
 		for i in range(1, int(replicates) + 1):
@@ -750,57 +886,37 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 			replicate_parameters.append([observation_median, gaussian_scale])
 
 		# Construct many simulated null arrays to perform deconvolution
-		beta_distributions_null = crispr_surf_deconvolution_simulations(negative_control_scores = ['gaussian', replicate_parameters], sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = [gamma_chosen], simulations_n = simulation_n, replicates = replicates, guideindices2bin = guideindices2bin, averaging_method = averaging_method, scale = scale)
+		beta_distributions_null = crispr_surf_deconvolution_simulations(negative_control_scores = ['gaussian', replicate_parameters], sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = [float(gamma_chosen)], simulations_n = simulation_n, replicates = replicates, guideindices2bin = guideindices2bin, averaging_method = averaging_method, scale = scale)
 
 	# Calculate p-values
 	print 'Calculating p. values for %s betas ...' % (len(beta_distributions))
 	# logger.info('Calculating p. values for %s betas ...' % (len(beta_distributions)))
 
 	beta_pvals = []
-	if not rapid_mode:
+	if test_type == 'nonparametric':
+
 		for i in range(len(beta_distributions)):
 
-			if (i + 1)%100 == 0:
+			if (i + 1)%500 == 0:
 				print 'Calculated p. values for %s out of %s betas ...' % ((i + 1), len(beta_distributions))
 				# logger.info('Calculated p. values for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
 
 			estimated_beta = beta_distributions[i]
-			null_betas = beta_distributions_null[i]
+			null_betas = np.array(beta_distributions_null[i])
+			beta_pvals.append(2.0 * min((null_betas >= estimated_beta).sum(), (null_betas <= estimated_beta).sum()) / float(len(null_betas)))
 
-			beta_pvals.append(2.0*float(max(0.0, min(sum(x >= estimated_beta for x in null_betas), sum(x <= estimated_beta for x in null_betas))))/float(len(null_betas)))
-	else:
-		null_betas = []
-
-		for i in range(len(beta_distributions_null)):
-			null_betas += beta_distributions_null[i]
-
-		null_betas = sorted(null_betas)
-		print 'Aggregated beta null distribution size: %s ...' % (len(null_betas))
-		# logger.info('Aggregated beta null distribution size: %s ...' % (len(null_betas)))
+	elif test_type == 'parametric':
 
 		for i in range(len(beta_distributions)):
 
-			if (i + 1)%100 == 0:
+			if (i + 1)%500 == 0:
 				print 'Calculated p. values for %s out of %s betas ...' % ((i + 1), len(beta_distributions))
 				# logger.info('Calculated p. values for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
 
 			estimated_beta = beta_distributions[i]
-
-			# Decide which tail to calculate
-			if estimated_beta < np.median(null_betas):
-
-				for j in range(len(null_betas)):
-					if null_betas[j] > estimated_beta:
-						pval = 2.0*max(0.0, float(j))/float(len(null_betas))
-						beta_pvals.append(pval)
-						break
-			else:
-
-				for j in range(len(null_betas))[::-1]:
-					if null_betas[j] < estimated_beta:
-						pval = 2.0*max(0.0, float(len(null_betas) - j - 1))/float(len(null_betas))
-						beta_pvals.append(pval)
-						break
+			null_betas_loc, null_betas_scale = norm.fit(beta_distributions_null[i])
+			
+			beta_pvals.append(2.0*float(max(0.0, min([norm(loc = null_betas_loc, scale = null_betas_scale).sf(estimated_beta), 1.0 - norm(loc = null_betas_loc, scale = null_betas_scale).sf(estimated_beta)]))))
 
 	print 'Calculated p. values for %s out of %s betas ...' % (len(beta_distributions), len(beta_distributions))
 	# logger.info('Calculated p. values for %s out of %s betas ...' % (len(beta_distributions), len(beta_distributions)))
@@ -819,31 +935,17 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	else:
 		beta_corrected_effect_size = crispr_surf_statistical_power(sgRNA_indices = sgRNA_indices, gammas2betas = gammas2betas, effect_size = effect_size, gamma_chosen = gamma_chosen, perturbation_profile = perturbation_profile, scale = scale)
 
-	if not rapid_mode:
+	for i in range(len(beta_corrected_effect_size)):
 
-		for i in range(len(beta_corrected_effect_size)):
+		beta_dist_null = np.array(beta_distributions_null[i])
+		shifted_distribution = beta_dist_null + beta_corrected_effect_size[i]
+		percentile_cutoff = np.percentile(beta_dist_null, (100.0 - float(new_p_cutoff)*100.0/2.0))
 
-			shifted_distribution = [x + beta_corrected_effect_size[i] for x in beta_distributions_null[i]]
-			percentile_cutoff = np.percentile(beta_distributions_null[i], (100.0 - float(new_p_cutoff)*100.0/2.0))
-			if (i + 1)%100 == 0:
-				print 'Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions))
-				# logger.info('Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
+		if (i + 1)%500 == 0:
+			print 'Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions))
+			# logger.info('Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
 
-			beta_statistical_power.append(float(sum(x >= percentile_cutoff for x in shifted_distribution))/float(len(shifted_distribution)))
-
-	else:
-
-		percentile_cutoff = np.percentile(null_betas, (100.0 - float(new_p_cutoff)*100.0/2.0))
-		for i in range(len(beta_corrected_effect_size)):
-
-			for j in range(len(null_betas)):
-				if (null_betas[j] + beta_corrected_effect_size[i]) > percentile_cutoff:
-					beta_statistical_power.append(float(len(null_betas) - j)/float(len(null_betas)))
-					break
-
-			if (i + 1)%100 == 0:
-				print 'Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions))
-				# logger.info('Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
+		beta_statistical_power.append((shifted_distribution > percentile_cutoff).sum() / float(len(shifted_distribution)))
 
 	gammas2betas['power'] = list(beta_statistical_power)
 
@@ -890,6 +992,9 @@ def crispr_surf_sgRNA_summary_table_update(sgRNA_summary_table, gammas2betas, av
 	p_values = []
 	padj_values = []
 
+	p_min = np.min([float(x) for x in gammas2betas['p'] if str(x) != 'nan' and float(x) > 0])
+	padj_min = np.min([float(x) for x in gammas2betas['padj'] if str(x) != 'nan' and float(x) > 0])
+
 	# Invert guideindices2bin
 	if scale > 1:
 		guideindices2bin_inverted = dict((v,k) for k in guideindices2bin for v in guideindices2bin[k])
@@ -914,8 +1019,10 @@ def crispr_surf_sgRNA_summary_table_update(sgRNA_summary_table, gammas2betas, av
 
 			deconvolved_signal_combined.append(gammas2betas['combined'][closest_index])
 			if gammas2betas['p'][closest_index] == 0:
-				p_values.append('<%s' % (2.0/float(simulation_n)))
-				padj_values.append('<%s' % min(padj_cutoffs))
+				# p_values.append('<%s' % (2.0/float(simulation_n)))
+				# padj_values.append('<%s' % min(padj_cutoffs))
+				p_values.append(p_min)
+				padj_values.append(padj_min)
 			else:
 				p_values.append(gammas2betas['p'][closest_index])
 				padj_values.append(gammas2betas['padj'][closest_index])
@@ -975,9 +1082,11 @@ def complete_beta_profile(gammas2betas, simulation_n, padj_cutoffs, out_dir):
 	indices = gammas2betas['indices']
 	betas = gammas2betas['combined']
 	pvals = gammas2betas['p']
-	pvals_new = [x if x != 0 else '<%s' % (2.0/float(simulation_n)) for x in pvals]
 	pvals_adj = gammas2betas['padj']
-	pvals_adj_new = [x if x != 0 else '<%s' % (min(padj_cutoffs)) for x in pvals_adj]
+	p_min = np.min([float(x) for x in gammas2betas['p'] if str(x) != 'nan' and float(x) > 0])
+	padj_min = np.min([float(x) for x in gammas2betas['padj'] if str(x) != 'nan' and float(x) > 0])
+	pvals_new = [float(x) if float(x) > 0 else p_min for x in pvals]
+	pvals_adj_new = [float(x) if float(x) > 0 else padj_min for x in pvals_adj]
 	power = gammas2betas['power']
 
 	df = pd.DataFrame({
@@ -1072,6 +1181,7 @@ def crispr_surf_IGV(sgRNA_summary_table, gammas2betas, padj_cutoffs, genome, sca
 	# Import sgRNA summary table
 	df_summary_table = pd.read_csv(out_dir + '/' + sgRNA_summary_table)
 	replicates = len([x for x in df_summary_table.columns.tolist() if 'Log2FC_Replicate' in x])
+	padj_min = np.min([float(x) for x in gammas2betas['padj'] if str(x) != 'nan' and float(x) > 0])
 
 	# Boundaries of inference
 	diff_vec = [0] + list(np.diff(gammas2betas['indices']))
@@ -1124,7 +1234,7 @@ def crispr_surf_IGV(sgRNA_summary_table, gammas2betas, padj_cutoffs, genome, sca
 	# Output raw and deconvolved scores IGV track
 	dff = df_summary_table[pd.notnull(df_summary_table['Chr']) & pd.notnull(df_summary_table['Perturbation_Index']) & pd.notnull(df_summary_table['Raw_Signal_Combined']) & pd.notnull(df_summary_table['Deconvolved_Signal_Combined'])]
 
-	with open(out_dir + '/raw_scores.bedgraph', 'w') as raw_scores, open(out_dir + '/deconvolved_scores.bedgraph', 'w') as deconvolved_scores, open(out_dir + '/statistical_power.bedgraph', 'w') as statistical_power:
+	with open(out_dir + '/raw_scores.bedgraph', 'w') as raw_scores, open(out_dir + '/deconvolved_scores.bedgraph', 'w') as deconvolved_scores, open(out_dir + '/neglog10_pvals.bedgraph', 'w') as neglog10_pvals, open(out_dir + '/statistical_power.bedgraph', 'w') as statistical_power:
 
 		for index, row in dff.iterrows():
 
@@ -1133,7 +1243,13 @@ def crispr_surf_IGV(sgRNA_summary_table, gammas2betas, padj_cutoffs, genome, sca
 
 		for index in range(len(gammas2betas['indices'])):
 
+			if float(gammas2betas['padj'][index]) > 0:
+				neglog10_pval = -math.log10(float(gammas2betas['padj'][index]))
+			else:
+				neglog10_pval = -math.log10(padj_min)
+
 			deconvolved_scores.write('\t'.join(map(str, [gammas2betas['chr'][index], int(gammas2betas['indices'][index]), int(gammas2betas['indices'][index]), float(gammas2betas['combined'][index])])) + '\n')
+			neglog10_pvals.write('\t'.join(map(str, [gammas2betas['chr'][index], int(gammas2betas['indices'][index]), int(gammas2betas['indices'][index]), neglog10_pval])) + '\n')
 			statistical_power.write('\t'.join(map(str, [gammas2betas['chr'][index], int(gammas2betas['indices'][index]), int(gammas2betas['indices'][index]), float(gammas2betas['power'][index])])) + '\n')
 
 	# Create IGV session

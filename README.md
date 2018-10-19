@@ -35,14 +35,12 @@ Users can specify the following options:
       Length of the sgRNA to design. (Default: 20)
 -g_constraint, --g_constraint
       Constraint forcing the 5' sgRNA bp to be G base. (true, false | Default: false)
--out, --out_dir
-      Name of output directory. (Default: .)
 ```
 
 **Example Command-Line Run**
 
 ```
-docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_design -bed /PATH/TO/BED -genome /PATH/TO/2BIT_GENOME -pams [ATCG]GG TTT[ACG] -orient left right -guide_l 20 -g_constraint false -out example_run
+docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_design -bed /PATH/TO/BED -genome /PATH/TO/2BIT_GENOME -pams [ATCG]GG TTT[ACG] -orient left right
 ```
 
 **Running Cas-OFFinder**

@@ -213,10 +213,12 @@ Users can specify the following options:
       Maximum distance between two sgRNAs to perform inference on bp in-between. Sets the boundaries of the gaussian profile to perform efficient deconvolution. If 0 (default), the --perturbation_type argument will be used to set an appropriate limit. (Default: 0)
 -avg, --averaging_method
       The averaging method to be performed to combine biological replicates. (mean, median | Default: median)
--sim_type, --simulation_type
+-null_dist, --null_distribution
       The method of building a null distribution for each smoothed beta score. (negative_control, gaussian, laplace | Default: gaussian)
 -sim_n, --simulation_n
       The number of simulations to perform for construction of the null distribution. (Default: 1000)
+-test_type, --test_type
+      Parametric or non-parametric test for betas. (parametric, nonparametric | Default: parametric)
 -lambda_list, --lambda_list
       List of lambdas (regularization parameter) to use during deconvolution step. If 0 (default), the --perturbation_type argument will be used to set a reasonable lambda list. Example: 1 2 3 4 5 6 7 8 9 10. (Default: 0)
 -lambda_val, --lambda_val
@@ -228,9 +230,7 @@ Users can specify the following options:
 -effect_size, --effect_size
       Effect size to estimate statistical power. (Default: 1)
 -padjs, --padj_cutoffs
-      List of p-adj. (Benjamini-Hochberg) cut-offs for determining significance of regulatory regions in the CRISPR tiling screen. Example: 0.01 0.05 0.1 0.15. (Default: 0.05)
--rapid, --rapid_mode
-      Significance testing can be performed more rapidly with the assumption beta nulls come from same distribution. (Default: False)
+      List of p-adj. (Benjamini-Hochberg) cut-offs for determining significance of regulatory regions in the CRISPR tiling screen. Example: 0.01 0.05 0.1 0.15. (Default: 0.05 0.01 0.001 0.0001)
 -out_dir, --out_directory
       The name of the output directory to place CRISPR-SURF analysis files. (Default: CRISPR_SURF_Analysis_[INSERT TIMESTAMP])
 ```
@@ -261,6 +261,7 @@ Simply change ```-pert cas9``` to ```-pert crispri``` or ```-pert crispra``` for
 * **deconvolved_scores.bedgraph** - deconvolution beta profile
 * **positive_significant_regions.bed** - positive significant regions at set FDR
 * **negative_significant_regions.bed** - negative significant regions at set FDR
+* **neglog10_pvals.bedgraph** - negative log10 p-values for betas
 * **statistical_power.bedgraph** - statistical power track at set effect size and FDR
 
 **3. significant_regions.csv:** List of the significant regions and its associated statistics and supporting sgRNAs.

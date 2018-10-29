@@ -97,11 +97,11 @@
           <li><b>sgRNA_Sequence</b>: sgRNA sequence not including PAM sequence</li>
           <li><b>Strand</b>: Targeting strand of sgRNA (+, -)</li>
           <li><b>sgRNA_Type</b>: Type of sgRNA (observation, negative_control, positive_control)</li>
-          <li><b>Replicate1_Log2FC</b>: Replicate 1 Log2FC enrichment score of sgRNA</li>
-          <li><b>Replicate2_Log2FC</b>: Replicate 2 Log2FC enrichment score of sgRNA</li>
+          <li><b>Log2FC_Replicate1</b>: Replicate 1 Log2FC enrichment score of sgRNA</li>
+          <li><b>Log2FC_Replicate2</b>: Replicate 2 Log2FC enrichment score of sgRNA</li>
         </ul>
 
-        <p><b>IMPORTANT:</b>   Minimum of two experimental replicates are needed. Additional columns (ReplicateN_Log2FC) can be included for more experimental replicates.</p>
+        <p><b>IMPORTANT:</b>   Minimum of two experimental replicates are needed. Additional columns (Log2FC_ReplicateN) can be included for more experimental replicates.</p>
         <p><b>NOTE:</b>   CRISPR-SURF Count, as described on our <a href="https://github.com/pinellolab/CRISPR-SURF">Github Page</a>, can help convert raw FASTQs into the file format necessary for CRISPR-SURF deconvolution analysis.</p>
 
         <br>
@@ -137,6 +137,7 @@
               <li><b>deconvolved_scores.bedgraph</b>: deconvolution beta profile</li>
               <li><b>positive_significant_regions.bed</b>: positive significant regions at set FDR</li>
               <li><b>negative_significant_regions.bed</b>: negative significant regions at set FDR</li>
+              <li><b>neglog10_pvals.bedgraph</b>: negative log10 p-values for betas</li>
               <li><b>statistical_power.bedgraph</b>: statistical power track at set effect size and FDR</li>
             </ul>
           <li><b>significant_regions.csv</b>: List of the significant regions and its associated statistics and supporting sgRNAs</li>

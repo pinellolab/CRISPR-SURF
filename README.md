@@ -157,6 +157,8 @@ Required Column Names:
 * **Replicate1_Sample_Count** - sgRNA Count in Replicate 1 Sample FASTQ (post-selection)
 * **Replicate2_Sample_Count** - sgRNA Count in Replicate 2 Sample FASTQ (post-selection)
 
+**IMPORTANT:** Minimum of two experimental replicates are needed. Additional columns (ReplicateN_Control_Count, ReplicateN_Sample_Count) can be included for more experimental replicates.
+
 **Example CRISPR-SURF Count Command-Line Run on Canver et al. 2015**
 
 The following command will run CRISPR-SURF Count for Option (2) on provided example data:

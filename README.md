@@ -157,7 +157,7 @@ Required Column Names:
 * **Replicate1_Sample_Count** - sgRNA Count in Replicate 1 Sample FASTQ (post-selection)
 * **Replicate2_Sample_Count** - sgRNA Count in Replicate 2 Sample FASTQ (post-selection)
 
-**Example Command-Line Run on Canver et al. 2015**
+**Example CRISPR-SURF Count Command-Line Run on Canver et al. 2015**
 
 The following command will run CRISPR-SURF Count for Option (2) on provided example data:
 
@@ -189,9 +189,23 @@ The website can also run on a local machine using the provided Docker image we h
 After execution of the command, the user will have a local instance of the website accessible at the URL: 
 [http://localhost:9993](http://localhost:9993)
 
-## CRISPR-SURF Command-Line Interface
+## CRISPR-SURF Deconvolution
 
-The CRISPR-SURF command-line interface takes ```sgRNAs_summary_table.csv``` (generated from CRISPR-SURF Count) as input. Run the CRISPR-SURF command-line tool in the terminal with the command:
+The CRISPR-SURF Deconvolution command-line tool takes ```sgRNAs_summary_table.csv``` (generated from CRISPR-SURF Count) as input. File requirements are stated below.
+
+Required Column Names:
+* **Chr** - Chromosome
+* **Start** - sgRNA Start Genomic Coordinate
+* **Stop** - sgRNA Start Genomic Coordinate
+* **sgRNA_Sequence** - sgRNA sequence not including PAM sequence
+* **Strand** - Targeting strand of the sgRNA
+* **sgRNA_Type** - Label for sgRNA type (observation, negative_control, positive_control)
+* **Log2FC_Replicate1** - Replicate 1 Log2FC enrichment score of sgRNA
+* **Log2FC_Replicate2** - Replicate 2 Log2FC enrichment score of sgRNA
+
+**IMPORTANT:** Minimum of two experimental replicates are needed. Additional columns (Log2FC_ReplicateN) can be included for more experimental replicates.
+
+Run CRISPR-SURF Deconvolution in the terminal with the command:
 
 ```
 docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_deconvolution [options]
@@ -233,14 +247,14 @@ Users can specify the following options:
       The name of the output directory to place CRISPR-SURF analysis files. (Default: CRISPR_SURF_Analysis_[INSERT TIMESTAMP])
 ```
 
-**Example Command-Line Run on Canver et al. 2015**
+**Example CRISPR-SURF Deconvolution Command-Line Run on Canver et al. 2015**
 
 The following command will run CRISPR-SURF analysis on provided example data:
 ```
 docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_deconvolution -f /SURF/command_line/exampleDataset/sgRNAs_summary_table.csv -pert cas9
 ```
 
-**Run CRISPR-SURF Command-Line Interface (2) Yourself**
+**Run CRISPR-SURF Deconvolution CRISPR-SURF Command-Line Interface (2) Yourself**
 
 Go into the directory where the sgRNAs summary table is located. Assuming the sgRNAs summary table is named                   ```sgRNAs_summary_table.csv``` and it's a CRISPR-Cas9 tiling screen, the command-line call would look like:
 

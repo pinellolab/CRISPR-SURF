@@ -177,18 +177,6 @@ Simply change ```-pert indel``` to ```-pert crispri``` or ```-pert crispra``` fo
 
 **IMPORTANT:** Additional ReplicateN_Control_Count and ReplicateN_Sample_Count columns can be added depending on the number of replicates used in the experiment. The number of ReplicateN_Control_Count columns must equal ReplicateN_Sample_Count columns. If a single control column (i.e. plasmid count) is used for multiple sample counts, just duplicate the single control column with the appropriate column names.
 
-## CRISPR-SURF Interactive Website
-
-In order to make CRISPR-SURF more user-friendly and accessible, we have created an interactive website: [http://crisprsurf.pinellolab.org](http://crisprsurf.pinellolab.org). The website implements all the features of the CRISPR-SURF command-line tool (except CRISPR-SURF Count) and, in addition, provides interactive and exploratory plots to visualize your CRISPR tiling screen data.
-
-The website offers two functions: 1) Running CRISPR-SURF on data provided by the user and 2) Visualizing CRISPR-SURF analysis on several published data sets, serving as the first database dedicated to CRISPR tiling screen data.
-
-The website can also run on a local machine using the provided Docker image we have created. To run the website on a local machine after the Docker installation, execute the following command from the command line:
-* ```docker run -p 9993:9993 pinellolab/crisprsurf SURF_webapp```
-
-After execution of the command, the user will have a local instance of the website accessible at the URL: 
-[http://localhost:9993](http://localhost:9993)
-
 ## CRISPR-SURF Deconvolution
 
 The CRISPR-SURF Deconvolution command-line tool takes ```sgRNAs_summary_table.csv``` (generated from CRISPR-SURF Count) as input. File requirements are stated below.
@@ -285,3 +273,15 @@ Simply change ```-pert cas9``` to ```-pert crispri``` or ```-pert crispra``` for
 **6. crispr-surf_parameters.csv:** The CRISPR-SURF analysis parameters used during the analysis session.
 
 **7. crispr-surf.log:** The log file for CRISPR-SURF analysis.
+
+## CRISPR-SURF Interactive Website
+
+In order to make CRISPR-SURF more user-friendly and accessible, we have created an interactive website: [http://crisprsurf.pinellolab.org](http://crisprsurf.pinellolab.org). The website implements all the features of the CRISPR-SURF command-line tool (except CRISPR-SURF Count) and, in addition, provides interactive and exploratory plots to visualize your CRISPR tiling screen data.
+
+The website offers two functions: 1) Running CRISPR-SURF on data provided by the user and 2) Visualizing CRISPR-SURF analysis on several published data sets, serving as the first database dedicated to CRISPR tiling screen data.
+
+The website can also run on a local machine using the provided Docker image we have created. To run the website on a local machine after the Docker installation, execute the following command from the command line:
+* ```docker run -p 9993:9993 pinellolab/crisprsurf SURF_webapp```
+
+After execution of the command, the user will have a local instance of the website accessible at the URL: 
+[http://localhost:9993](http://localhost:9993)

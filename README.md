@@ -39,7 +39,7 @@ Users can specify the following options:
       Name of output directory. (Default: ./)
 ```
 
-**Example Command-Line Run**
+**Running CRISPR-SURF Design Yourself**
 
 ```
 docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_design -bed BED_FILE -genome 2BIT_GENOME_FILE -pams [ATCG]GG TTT[ACG] -orient left right –out example_run
@@ -118,14 +118,14 @@ Required Column Names:
 * **Strand** - Targeting strand of the sgRNA
 * **sgRNA_Type** - Label for sgRNA type (observation, negative_control, positive_control)
 
-**Example Command-Line Run on Canver et al. 2015**
+**Example CRISPR-SURF Count on Canver et al. 2015 for Option (1)**
 
 The following command will run CRISPR-SURF Count for Option (1) on provided example data:
 ```
 docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_count -f /SURF/command_line/exampleDataset/sgRNA_library_file.csv -control_fastqs /SURF/command_line/exampleDataset/rep1_neg.fastq.gz /SURF/command_line/exampleDataset/rep2_neg.fastq.gz -sample_fastqs /SURF/command_line/exampleDataset/rep1_pos.fastq.gz /SURF/command_line/exampleDataset/rep2_pos.fastq.gz -nuclease cas9 -pert indel
 ```
 
-**Run CRISPR-SURF Count Option (1) Yourself**
+**Running CRISPR-SURF Count Option (1) Yourself**
 
 Place the sgRNA library file and FASTQs in the same directory. The control FASTQs represent the sgRNA distribution prior to selection, while the sample FASTQs represent the sgRNA distribution following selection. Assuming the sgRNA library file is named ```sgRNA_library_file.csv```, the FASTQs (2 replicates) are named ```rep1_control.fastq```, ```rep2_control.fastq```, ```rep1_sample.fastq```, ```rep2_sample.fastq```, and it's a CRISPR-Cas9 tiling screen, the command-line call would look like:
 
@@ -163,7 +163,7 @@ Required Column Names:
 
 **IMPORTANT:** Minimum of two experimental replicates are needed. Additional columns (ReplicateN_Control_Count, ReplicateN_Sample_Count) can be included for more experimental replicates.
 
-**Example CRISPR-SURF Count Command-Line Run on Canver et al. 2015**
+**Example CRISPR-SURF Count on Canver et al. 2015 for Option (2)**
 
 The following command will run CRISPR-SURF Count for Option (2) on provided example data:
 
@@ -171,7 +171,7 @@ The following command will run CRISPR-SURF Count for Option (2) on provided exam
 docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_count -f /SURF/command_line/exampleDataset/sgRNA_library_file_w_counts.csv -nuclease cas9 -pert indel
 ```
 
-**Run CRISPR-SURF Count Option (2) Yourself**
+**Running CRISPR-SURF Count Option (2) Yourself**
 
 Go into the directory where the sgRNA library file is located. Assuming the sgRNA library file with counts is named ```sgRNA_library_file_w_counts.csv``` and it's a CRISPR-Cas9 tiling screen, the command-line call would look like:
 
@@ -241,14 +241,14 @@ Users can specify the following options:
       The name of the output directory to place CRISPR-SURF analysis files. (Default: CRISPR_SURF_Analysis_TIMESTAMP)
 ```
 
-**Example CRISPR-SURF Deconvolution Command-Line Run on Canver et al. 2015**
+**Example CRISPR-SURF Deconvolution on Canver et al. 2015**
 
 The following command will run CRISPR-SURF analysis on provided example data:
 ```
 docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_deconvolution -f /SURF/command_line/exampleDataset/sgRNAs_summary_table.csv -pert cas9
 ```
 
-**Run CRISPR-SURF Deconvolution CRISPR-SURF Command-Line Interface (2) Yourself**
+**Running CRISPR-SURF Deconvolution Yourself**
 
 Go into the directory where the sgRNAs summary table is located. Assuming the sgRNAs summary table is named                   ```sgRNAs_summary_table.csv``` and it's a CRISPR-Cas9 tiling screen, the command-line call would look like:
 

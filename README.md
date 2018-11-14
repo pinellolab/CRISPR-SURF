@@ -35,6 +35,8 @@ Users can specify the following options:
       Length of the sgRNA to design. (Default: 20)
 -g_constraint, --g_constraint
       Constraint forcing the 5' sgRNA bp to be G base. (Options: true, false | Default: false)
+-out, --out_dir
+      Name of output directory. (Default: ./)
 ```
 
 **Example Command-Line Run**

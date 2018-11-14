@@ -208,35 +208,35 @@ docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_deconvolution [o
 Users can specify the following options:
 ```
 -f, --sgRNAs_summary_table
-      Input sgRNAs summary table. Direct output of CRISPR-SURF Count. (Default: None)
+      Input sgRNAs summary table. Direct output of CRISPR-SURF Count. (Required)
 -pert, --perturbation_type
-      The CRISPR perturbation type used in the tiling experiment. (cas9, cpf1, crispri, crispra)
--range, --characteristic_perturbation_range (Default: None)
-      Characteristic perturbation length. If 0 (default), the --perturbation_type argument will be used to set an appropriate perturbation range. (Default: 0)
+      The CRISPR perturbation type used in the tiling experiment. (Options: cas9, cpf1, crispri, crispra | Required)
+-range, --characteristic_perturbation_range
+      Characteristic perturbation length. If 0 (default), the -pert argument will be used to set an appropriate perturbation range. (Default: 0)
 -scale, --scale
-      Scaling factor to efficiently perform deconvolution with negligible consequences. If 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate scaling factor. (Default: 0)
+      Scaling factor to efficiently perform deconvolution with negligible consequences. If 0 (default), the -range argument will be used to set an appropriate scaling factor. (Default: 0)
 -limit, --limit
-      Maximum distance between two sgRNAs to perform inference on bp in-between. Sets the boundaries of the gaussian profile to perform efficient deconvolution. If 0 (default), the --perturbation_type argument will be used to set an appropriate limit. (Default: 0)
+      Maximum distance between two sgRNAs to perform inference on bp in-between. Sets the boundaries of the gaussian profile to perform efficient deconvolution. If 0 (default), the -pert argument will be used to set an appropriate limit. (Default: 0)
 -avg, --averaging_method
-      The averaging method to be performed to combine biological replicates. (mean, median | Default: median)
+      The averaging method to be performed to combine biological replicates. (Options: mean, median | Default: median)
 -null_dist, --null_distribution
-      The method of building a null distribution for each smoothed beta score. (negative_control, gaussian, laplace | Default: gaussian)
+      The method of building a null distribution for each smoothed beta score. (Options: negative_control, gaussian, laplace | Default: gaussian)
 -sim_n, --simulation_n
       The number of simulations to perform for construction of the null distribution. (Default: 1000)
 -test_type, --test_type
-      Parametric or non-parametric test for betas. (parametric, nonparametric | Default: parametric)
+      Parametric or non-parametric test for betas. (Options: parametric, nonparametric | Default: parametric)
 -lambda_list, --lambda_list
-      List of lambdas (regularization parameter) to use during deconvolution step. If 0 (default), the --perturbation_type argument will be used to set a reasonable lambda list. Example: 1 2 3 4 5 6 7 8 9 10. (Default: 0)
+      List of lambdas (regularization parameter) separated by spaces to use during the deconvolution step (i.e. 1 2 3 4 5 6 7 8 9 10). If 0 (default), the -pert argument will be used to set a reasonable lambda list. (Default: 0)
 -lambda_val, --lambda_val
-      The lambda to use to use during deconvolution step. If 0 (default), the --lambda_list argument will be used. (Default: 0)
+      The lambda value to be used during the deconvolution step. If 0 (default), the -lambda_list argument will be used. (Default: 0)
 -corr, --correlation
-      The correlation between biological replicates to determine a reasonable lambda for the deconvolution operation. if 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate correlation.
+      The Pearson's r correlation coefficient between biological replicates to determine a reasonable lambda for the deconvolution operation. If 0 (default), the -range argument will be used to set an appropriate correlation. (Default: 0)
 -genome, --genome
-      The genome to be used to create the IGV session file. (hg19, hg38, mm9, mm10, etc. | Default: hg19)
+      The genome to be used to create the IGV session file. (Options: hg19, hg38, mm9, mm10, etc. | Default: hg19)
 -effect_size, --effect_size
       Effect size to estimate statistical power. (Default: 1)
 -padjs, --padj_cutoffs
-      List of p-adj. (Benjamini-Hochberg) cut-offs for determining significance of regulatory regions in the CRISPR tiling screen. Example: 0.01 0.05 0.1 0.15. (Default: 0.05 0.01 0.001 0.0001)
+      List of p-adj. (Benjamini-Hochberg) cut-offs separated by spaces for determining significance of regulatory regions in the CRISPR tiling screen (i.e. 0.05 0.01 0.001 0.0001). (Default: 0.05 0.01 0.001 0.0001)
 -out_dir, --out_directory
       The name of the output directory to place CRISPR-SURF analysis files. (Default: CRISPR_SURF_Analysis_[INSERT TIMESTAMP])
 ```
@@ -282,11 +282,11 @@ Simply change ```-pert cas9``` to ```-pert crispri``` or ```-pert crispra``` for
 
 ## CRISPR-SURF Interactive Website
 
-In order to make CRISPR-SURF more user-friendly and accessible, we have created an interactive website: [http://crisprsurf.pinellolab.org](http://crisprsurf.pinellolab.org). The website implements all the features of the CRISPR-SURF command-line tool (except CRISPR-SURF Count) and, in addition, provides interactive and exploratory plots to visualize your CRISPR tiling screen data.
+In order to make CRISPR-SURF more user-friendly and accessible, we have created an interactive website: http://crisprsurf.pinellolab.org. The website implements all the features of the CRISPR-SURF command-line tool (except CRISPR-SURF Count) and, in addition, provides interactive and exploratory plots to visualize your CRISPR tiling screen data.
 
-The website offers two functions: 1) Running CRISPR-SURF on data provided by the user and 2) Visualizing CRISPR-SURF analysis on several published data sets, serving as the first database dedicated to CRISPR tiling screen data.
+The website offers two functions: 1) Running CRISPR-SURF on data provided by the user and 2) Visualizing CRISPR-SURF analysis on several published data sets, serving as the first database dedicated to CRISPR tiling screen data. There is a 10,000 sgRNA limitation for analysis with the web application due to server capacity. Analysis of CRISPR tiling screen data with >10,000 sgRNAs requires the use of the command-line tool or provided Docker image.
 
-The website can also run on a local machine using the provided Docker image we have created. To run the website on a local machine after the Docker installation, execute the following command from the command line:
+The web application can also run on a local machine using the provided Docker image we have created. To run the website on a local machine after the Docker installation, execute the following command from the command line:
 * ```docker run -p 9993:9993 pinellolab/crisprsurf SURF_webapp```
 
 After execution of the command, the user will have a local instance of the website accessible at the URL: 

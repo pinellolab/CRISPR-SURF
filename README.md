@@ -28,9 +28,9 @@ Users can specify the following options:
 -genome, --genome
       Input genome 2bit file. (Required)
 -pams, --pams
-      Specification of different CRISPR PAMs (i.e. [ATCG]GG, TTT[ACG]). This can be a list with multiple PAMs separated by spaces. (Required)
+      Specification of different CRISPR PAMs where brackets [] allow for multiple nucleotides for a given position (i.e. [ATCG]GG -> NGG, TTT[ACG] -> TTTV, [ATCG]G -> NG). Multiple PAMs separated by spaces can be inputted (i.e. [ATCG]GG TTT[ACG]). (Required)
 -orient, --orientations
-      Orientation of spacer relative to PAM. This must match the length of the -pams option as an orientation must be specified for each PAM. Multiple orientations are separated by spaces (i.e. left right). (Options: left, right | Required)
+      Orientation of the spacer sequence relative to the PAM. This must match the length of the -pams option as an orientation must be specified for each PAM. Multiple orientations are separated by spaces (i.e. left right). (Options: left, right | Required)
 -guide_l, --guide_length
       Length of the sgRNA to design. (Default: 20)
 -g_constraint, --g_constraint

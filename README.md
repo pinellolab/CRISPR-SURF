@@ -238,7 +238,7 @@ Users can specify the following options:
 -padjs, --padj_cutoffs
       List of p-adj. (Benjamini-Hochberg) cut-offs separated by spaces for determining significance of regulatory regions in the CRISPR tiling screen (i.e. 0.05 0.01 0.001 0.0001). (Default: 0.05 0.01 0.001 0.0001)
 -out_dir, --out_directory
-      The name of the output directory to place CRISPR-SURF analysis files. (Default: CRISPR_SURF_Analysis_[INSERT TIMESTAMP])
+      The name of the output directory to place CRISPR-SURF analysis files. (Default: CRISPR_SURF_Analysis_TIMESTAMP)
 ```
 
 **Example CRISPR-SURF Deconvolution Command-Line Run on Canver et al. 2015**

@@ -34,7 +34,7 @@ Users can specify the following options:
 -guide_l, --guide_length
       Length of the sgRNA to design. (Default: 20)
 -g_constraint, --g_constraint
-      Constraint forcing the 5' sgRNA bp to be G base. (Options: true, false | Default: false)
+      Constraint forcing the 5' sgRNA bp to be G base. All guides with no 5’ G will be filtered out. (Options: true, false | Default: false)
 -out, --out_dir
       Name of output directory. (Default: ./)
 ```
@@ -42,7 +42,7 @@ Users can specify the following options:
 **Example Command-Line Run**
 
 ```
-docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_design -bed BED_FILE -genome 2BIT_GENOME_FILE -pams [ATCG]GG TTT[ACG] -orient left right
+docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_design -bed BED_FILE -genome 2BIT_GENOME_FILE -pams [ATCG]GG TTT[ACG] -orient left right –out example_run
 ```
 
 **IMPORTANT:** The BED_FILE and 2BIT_GENOME_FILE must be in the working directory where the command-line code is run.

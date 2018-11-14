@@ -62,23 +62,23 @@ docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_count [options]
 Users can specify the following options:
 ```
 -f, --sgRNA_library  
-      Input sgRNA library file. Formatting specified below. (Default: None)
+      Input sgRNA library file. Formatting specified below. (Required)
 -control_fastqs, --control_fastqs
-      List of control FASTQs with sgRNA counts prior to selection. Example: rep1_control.fastq rep2_control.fastq rep3_control.fastq (Default: None)
+      List of control FASTQs with sgRNA sequencing prior to selection separated by spaces (i.e. rep1_control.fastq rep2_control.fastq rep3_control.fastq). (Default: None)
 -sample_fastqs, --sample_fastqs
-      List of sample FASTQs with sgRNA counts following selection. Example: rep1_sample.fastq rep2_sample.fastq rep3_sample.fastq (Default: None)
+      List of sample FASTQs with sgRNA sequencing following selection separated by spaces (i.e. rep1_sample.fastq rep2_sample.fastq rep3_sample.fastq). (Default: None)
 -nuclease, --nuclease
-      Nuclease used in the CRISPR tiling screen experiment. This information is used to determine the cleavage index if indels are specified as the perturbation. (cas9, cpf1 | Default: cas9)
+      Nuclease used in the CRISPR tiling screen experiment. This information is used to determine the cleavage index if indels are specified as the perturbation. (Options: cas9, cpf1 | Default: cas9)
 -pert, --perturbation
-      Perturbation type used in the CRISPR tiling screen experiment. This information is used to determine the perturbation index for a given sgRNA. (indel, crispri, crispra | Default: indel)
+      Perturbation type used in the CRISPR tiling screen experiment. This information is used to determine the perturbation index for a given sgRNA. (Options: indel, crispri, crispra | Default: indel)
 -norm, --normalization
-      Normalization method between sequencing libraries. (none, median, total | Default: median)
+      Normalization method between sequencing libraries. (Options: none, median, total | Default: median)
 -count_method, --count_method
-      Counting method for sgRNA counting from FASTQ. The tracrRNA option aligns a consensus sequence directly downstream of the sgRNA. The index option uses provided indices to grab sgRNA sequence from read. (tracrRNA, index | Default: tracrRNA)
+      Counting method for sgRNAs from FASTQ. The tracrRNA option aligns a consensus sequence directly downstream of the sgRNA. The index option uses provided indices to grab sgRNA sequence from the sequencing reads. (Options: tracrRNA, index | Default: tracrRNA)
 -tracrRNA, --tracrRNA
       If -count_method == tracrRNA. The consensus tracrRNA sequence directly downstream of the sgRNA for counting from FASTQ. (Default: GTTTTAG)
 -sgRNA_index, --sgRNA_index
-      If -count_method == index. The sgRNA start and stop indices (0-index) within the FASTQ reads. Example: 0 20 (Default: 0 20)
+      If -count_method == index. The sgRNA start and stop indices (0-index) within the sequencing reads (i.e. 0 20). (Default: 0 20)
 -count_min, --count_minimum
       The minimum number of counts for a given sgRNA in each control sample. (Default: 50)
 -dropout, --dropout_penalty
@@ -90,7 +90,7 @@ Users can specify the following options:
 -reverse, --reverse_score
       Reverse the enrichment score. Generally applied to depletion screens where a positive score is associated with depletion of a sgRNA. (Default: False)
 -out_dir, --out_directory
-      The output directory for CRISPR-SURF counts. (Default: .)
+      The output directory for CRISPR-SURF counts. (Default: ./)
 ```
 
 To start, you will need one of the following:

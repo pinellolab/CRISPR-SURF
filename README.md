@@ -24,24 +24,26 @@ docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_design [options]
 Users can specify the following options:
 ```
 -bed, --bed
-      Input bed file to design tiling sgRNAs. (Default: None)
+      Input bed file to design tiling sgRNAs. (Required)
 -genome, --genome
-      Input genome 2bit file. (Default: None)
+      Input genome 2bit file. (Required)
 -pams, --pams
-      Specification of different CRISPR PAMs (i.e. [ATCG]GG, TTT[ACG]). This can be a list with multiple PAMs separated by spaces. (Default: None)
+      Specification of different CRISPR PAMs (i.e. [ATCG]GG, TTT[ACG]). This can be a list with multiple PAMs separated by spaces. (Required)
 -orient, --orientations
-      Orientation of spacer relative to PAM. This must match the length of the -pams option as an orientation must be specified for each PAM. Multiple orientations are separated by spaces. (left, right | Default: None)
+      Orientation of spacer relative to PAM. This must match the length of the -pams option as an orientation must be specified for each PAM. Multiple orientations are separated by spaces (i.e. left right). (Options: left, right | Required)
 -guide_l, --guide_length
       Length of the sgRNA to design. (Default: 20)
 -g_constraint, --g_constraint
-      Constraint forcing the 5' sgRNA bp to be G base. (true, false | Default: false)
+      Constraint forcing the 5' sgRNA bp to be G base. (Options: true, false | Default: false)
 ```
 
 **Example Command-Line Run**
 
 ```
-docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_design -bed /PATH/TO/BED -genome /PATH/TO/2BIT_GENOME -pams [ATCG]GG TTT[ACG] -orient left right
+docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_design -bed BED_FILE -genome 2BIT_GENOME_FILE -pams [ATCG]GG TTT[ACG] -orient left right
 ```
+
+**IMPORTANT:** The BED_FILE and 2BIT_GENOME_FILE must be in the working directory where the command-line code is run.
 
 **Running Cas-OFFinder**
 

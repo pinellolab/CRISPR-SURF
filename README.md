@@ -235,6 +235,8 @@ Users can specify the following options:
       The genome to be used to create the IGV session file. (Options: hg19, hg38, mm9, mm10, etc. | Default: hg19)
 -effect_size, --effect_size
       Effect size to estimate statistical power. (Default: 1)
+-estimate_power, --estimate_statistical_power
+      Whether or not to compute a track estimating statistical power for the CRISPR tiling screen data. (Options: yes, no | Default: no)
 -padjs, --padj_cutoffs
       List of p-adj. (Benjamini-Hochberg) cut-offs separated by spaces for determining significance of regulatory regions in the CRISPR tiling screen (i.e. 0.05 0.01 0.001 0.0001). (Default: 0.05 0.01 0.001 0.0001)
 -out_dir, --out_directory
@@ -268,7 +270,7 @@ Simply change ```-pert cas9``` to ```-pert crispri``` or ```-pert crispra``` for
 * **positive_significant_regions.bed** - positive significant regions at set FDR
 * **negative_significant_regions.bed** - negative significant regions at set FDR
 * **neglog10_pvals.bedgraph** - negative log10 p-values for betas
-* **statistical_power.bedgraph** - statistical power track at set effect size and FDR
+* **statistical_power.bedgraph** - statistical power track at set effect size and FDR (-estimate_power yes)
 
 **3. significant_regions.csv:** List of the significant regions and its associated statistics and supporting sgRNAs.
 

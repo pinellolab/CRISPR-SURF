@@ -270,7 +270,7 @@ Simply change ```-pert cas9``` to ```-pert crispri``` or ```-pert crispra``` for
 * **positive_significant_regions.bed** - positive significant regions at set FDR
 * **negative_significant_regions.bed** - negative significant regions at set FDR
 * **neglog10_pvals.bedgraph** - negative log10 p-values for betas
-* **statistical_power.bedgraph** - statistical power track at set effect size and FDR (-estimate_power yes)
+* **statistical_power.bedgraph** - statistical power track at set effect size and FDR (```-estimate_power yes```)
 
 **3. significant_regions.csv:** List of the significant regions and its associated statistics and supporting sgRNAs.
 

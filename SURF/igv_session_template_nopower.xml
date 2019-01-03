@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Session genome="#genome#" hasGeneTrack="true" hasSequenceTrack="true" locus="All" path="igv_session_template.xml" version="8">
+    <Resources>
+        <Resource path="./neglog10_pvals.bedgraph"/>
+        <Resource path="./deconvolved_scores.bedgraph"/>
+        <Resource path="./positive_significant_regions.bed"/>
+        <Resource path="./raw_scores.bedgraph"/>
+        <Resource path="./negative_significant_regions.bed"/>
+    </Resources>
+    <Panel height="535" name="DataPanel" width="1423">
+        <Track altColor="153,153,153" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,153,153" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" height="100" id="raw_scores.bedgraph" name="raw_scores.bedgraph" normalize="false" renderer="SCATTER_PLOT" sortable="true" visible="true" windowFunction="none">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="4.323033" minimum="-6.45723" type="LINEAR"/>
+        </Track>
+        <Track altColor="0,0,178" autoScale="false" clazz="org.broad.igv.track.FeatureTrack" color="255,102,102" colorScale="ContinuousColorScale;0.0;26.0;255,255,255;0,0,178" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" id="positive_significant_regions.bed" name="positive_significant_regions.bed" renderer="BASIC_FEATURE" sortable="false" visible="true" windowFunction="count">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="26.0" minimum="0.0" type="LINEAR"/>
+        </Track>
+        <Track altColor="102,153,255" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="255,102,102" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" height="100" id="deconvolved_scores.bedgraph" name="deconvolved_scores.bedgraph" normalize="false" renderer="BAR_CHART" sortable="true" visible="true" windowFunction="none">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="0.06485069" minimum="-0.03622201" type="LINEAR"/>
+        </Track>
+        <Track altColor="0,0,178" autoScale="false" clazz="org.broad.igv.track.FeatureTrack" color="102,153,255" colorScale="ContinuousColorScale;0.0;4.0;255,255,255;0,0,178" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" id="negative_significant_regions.bed" name="negative_significant_regions.bed" renderer="BASIC_FEATURE" sortable="false" visible="true" windowFunction="count">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="4.0" minimum="0.0" type="LINEAR"/>
+        </Track>
+        <Track altColor="0,0,178" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="0,204,153" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" height="75" id="neglog10_pvals.bedgraph" name="neglog10_pvals.bedgraph" normalize="false" renderer="BAR_CHART" sortable="true" visible="true" windowFunction="none">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="141.55736" minimum="0.0" type="LINEAR"/>
+        </Track>
+    </Panel>
+    <Panel height="76" name="FeaturePanel" width="1423">
+        <Track altColor="0,0,178" autoScale="false" color="0,0,178" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" id="Reference sequence" name="Reference sequence" sortable="false" visible="true"/>
+        <Track altColor="0,0,178" autoScale="false" clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" colorScale="ContinuousColorScale;0.0;423.0;255,255,255;0,0,178" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" height="35" id="#genome#_genes" name="RefSeq Genes" renderer="BASIC_FEATURE" sortable="false" visible="true" windowFunction="count">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="423.0" minimum="0.0" type="LINEAR"/>
+        </Track>
+    </Panel>
+    <PanelLayout dividerFractions="0.8689320388349514"/>
+    <HiddenAttributes>
+        <Attribute name="DATA FILE"/>
+        <Attribute name="DATA TYPE"/>
+        <Attribute name="NAME"/>
+    </HiddenAttributes>
+</Session>

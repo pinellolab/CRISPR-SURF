@@ -36,6 +36,7 @@ parser.add_argument('-lambda_val', '--lambda_val', type = float, default = 0, he
 parser.add_argument('-corr', '--correlation', type = float, default = 0, help = 'The correlation between biological replicates to determine a reasonable lambda for the deconvolution operation. if 0 (default), the --characteristic_perturbation_range argument will be used to set an appropriate correlation.')
 parser.add_argument('-genome', '--genome', type = str, default = 'hg19', help = 'The genome to be used to create the IGV session file (hg19, hg38, mm9, mm10, etc.).')
 parser.add_argument('-effect_size', '--effect_size', type = float, default = 1, help = 'Effect size to estimate statistical power.')
+parser.add_argument('-estimate_power', '--estimate_statistical_power', type = str, choices = ['yes', 'no'], default = 'no', help = 'Whether or not to compute a track estimating statistical power for the CRISPR tiling screen data.')
 parser.add_argument('-padjs', '--padj_cutoffs', default = 0, nargs = '+', help = 'List of p-adj. (Benjamini-Hochberg) cut-offs for determining significance of regulatory regions in the CRISPR tiling screen.')
 parser.add_argument('-out_dir', '--out_directory', type = str, default = 'CRISPR_SURF_Analysis_%s' % (timestr), help = 'The name of the output directory to place CRISPR-SURF analysis files.')
 args = parser.parse_args()
@@ -56,6 +57,7 @@ correlation = args.correlation
 genome = args.genome
 padj_cutoffs = args.padj_cutoffs
 effect_size = args.effect_size
+estimate_statistical_power = args.estimate_statistical_power
 out_dir = args.out_directory
 
 ##### Create output directory
@@ -260,7 +262,7 @@ except:
 
 ##### Bootstrap deconvolution analysis to assign statistical significance
 try:
-	gammas2betas_updated, replicate_parameters = crispr_surf_statistical_significance(sgRNA_summary_table = sgRNAs_summary_table, sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gammas2betas = gammas2betas_updated, null_distribution = null_distribution, simulation_n = simulation_n, test_type = test_type, guideindices2bin = guideindices2bin, averaging_method = averaging_method, padj_cutoffs = padj_cutoffs, effect_size = effect_size, limit = limit, scale = scale)
+	gammas2betas_updated, replicate_parameters = crispr_surf_statistical_significance(sgRNA_summary_table = sgRNAs_summary_table, sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gammas2betas = gammas2betas_updated, null_distribution = null_distribution, simulation_n = simulation_n, test_type = test_type, guideindices2bin = guideindices2bin, averaging_method = averaging_method, padj_cutoffs = padj_cutoffs, effect_size = effect_size, limit = limit, scale = scale, estimate_statistical_power = estimate_statistical_power)
 	logger.info('Finished simulations to assess statistical significance of deconvolution profile ...')
 
 except:
@@ -278,7 +280,7 @@ except:
 
 ##### Output beta profile
 try:
-	complete_beta_profile(gammas2betas = gammas2betas_updated, simulation_n = simulation_n, padj_cutoffs = padj_cutoffs, out_dir = out_dir)
+	complete_beta_profile(gammas2betas = gammas2betas_updated, simulation_n = simulation_n, padj_cutoffs = padj_cutoffs, estimate_statistical_power = estimate_statistical_power, out_dir = out_dir)
 	logger.info('Successfully created beta profile file ...')
 
 except:
@@ -296,7 +298,7 @@ except:
 
 ##### Output IGV tracks
 try:
-	crispr_surf_IGV(sgRNA_summary_table = sgRNAs_summary_table.split('/')[-1].replace('.csv', '_updated.csv'), gammas2betas = gammas2betas_updated, padj_cutoffs = padj_cutoffs, genome = genome, scale = scale, guideindices2bin = guideindices2bin, out_dir = out_dir)
+	crispr_surf_IGV(sgRNA_summary_table = sgRNAs_summary_table.split('/')[-1].replace('.csv', '_updated.csv'), gammas2betas = gammas2betas_updated, padj_cutoffs = padj_cutoffs, genome = genome, scale = scale, guideindices2bin = guideindices2bin, estimate_statistical_power = estimate_statistical_power, out_dir = out_dir)
 	logger.info('Successfully created IGV tracks ...')
 
 except:
@@ -321,6 +323,7 @@ parameters = {
 'correlation': correlation,
 'genome': genome,
 'effect_size': effect_size,
+'estimate_statistical_power': estimate_statistical_power,
 'padj_cutoffs': ' '.join(map(str, padj_cutoffs)),
 'out_directory': out_dir
 }

@@ -60,7 +60,7 @@ def crispr_surf_deconvolved_signal(gammas2betas, gamma_chosen, averaging_method,
 
 	return gammas2betas
 
-def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, perturbation_profile, gammas2betas, null_distribution, simulation_n, test_type, guideindices2bin, averaging_method, padj_cutoffs, effect_size, limit, scale):
+def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, perturbation_profile, gammas2betas, null_distribution, simulation_n, test_type, guideindices2bin, averaging_method, padj_cutoffs, effect_size, limit, scale, estimate_statistical_power):
 
 	"""
 	Function to assess the statistical significance of deconvolved genomic signal.
@@ -201,29 +201,30 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	new_p_cutoff = beta_pvals[pymin(range(len(beta_pvals_adj)), key=lambda i: pyabs(beta_pvals_adj[i] - float(padj_cutoffs[0])))]
 	
 	# Estimate statistical power
-	beta_statistical_power = []
-	if scale > 1:
-		beta_corrected_effect_size = crispr_surf_statistical_power(sgRNA_indices = guideindices2bin.keys(), gammas2betas = gammas2betas, effect_size = effect_size, gamma_chosen = gamma_chosen, perturbation_profile = perturbation_profile, scale = scale)
+	if estimate_statistical_power == 'yes':
+		beta_statistical_power = []
+		if scale > 1:
+			beta_corrected_effect_size = crispr_surf_statistical_power(sgRNA_indices = guideindices2bin.keys(), gammas2betas = gammas2betas, effect_size = effect_size, gamma_chosen = gamma_chosen, perturbation_profile = perturbation_profile, scale = scale)
 
-	else:
-		beta_corrected_effect_size = crispr_surf_statistical_power(sgRNA_indices = sgRNA_indices, gammas2betas = gammas2betas, effect_size = effect_size, gamma_chosen = gamma_chosen, perturbation_profile = perturbation_profile, scale = scale)
+		else:
+			beta_corrected_effect_size = crispr_surf_statistical_power(sgRNA_indices = sgRNA_indices, gammas2betas = gammas2betas, effect_size = effect_size, gamma_chosen = gamma_chosen, perturbation_profile = perturbation_profile, scale = scale)
 
-	for i in range(len(beta_corrected_effect_size)):
+		for i in range(len(beta_corrected_effect_size)):
 
-		# shifted_distribution = [x + beta_corrected_effect_size[i] for x in beta_distributions_null[i]]
-		# percentile_cutoff = np.percentile(beta_distributions_null[i], (100.0 - float(new_p_cutoff)*100.0/2.0))
+			# shifted_distribution = [x + beta_corrected_effect_size[i] for x in beta_distributions_null[i]]
+			# percentile_cutoff = np.percentile(beta_distributions_null[i], (100.0 - float(new_p_cutoff)*100.0/2.0))
 
-		beta_dist_null = np.array(beta_distributions_null[i])
-		shifted_distribution = beta_dist_null + beta_corrected_effect_size[i]
-		percentile_cutoff = np.percentile(beta_dist_null, (100.0 - float(new_p_cutoff)*100.0/2.0))
+			beta_dist_null = np.array(beta_distributions_null[i])
+			shifted_distribution = beta_dist_null + beta_corrected_effect_size[i]
+			percentile_cutoff = np.percentile(beta_dist_null, (100.0 - float(new_p_cutoff)*100.0/2.0))
 
-		if (i + 1)%500 == 0:
-			logger.info('Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
+			if (i + 1)%500 == 0:
+				logger.info('Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
 
-		# beta_statistical_power.append(float(sum(x >= percentile_cutoff for x in shifted_distribution))/float(len(shifted_distribution)))
+			# beta_statistical_power.append(float(sum(x >= percentile_cutoff for x in shifted_distribution))/float(len(shifted_distribution)))
 
-		beta_statistical_power.append((shifted_distribution > percentile_cutoff).sum() / float(len(shifted_distribution)))
+			beta_statistical_power.append((shifted_distribution > percentile_cutoff).sum() / float(len(shifted_distribution)))
 
-	gammas2betas['power'] = beta_statistical_power
+		gammas2betas['power'] = beta_statistical_power
 
 	return gammas2betas, replicate_parameters

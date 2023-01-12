@@ -158,7 +158,17 @@ def crispr_surf_counts(sgRNA_library, control_fastqs = None, sample_fastqs = Non
 
 			except:
 				perturbation_indices.append(np.nan)
-
+    elif 'be' in perturbation.lower():
+        for index, row in df.iterrows():
+            try:
+                if row['strand'] == '+':
+                    perturbation_indices.append(int(min(row['start'], row['stop']) + 6))
+                elif row['strand'] == '-':
+                    perturbation_indices.append(int(max(row['start'], row['stop']) - 6))
+                else:
+                    perturbation_indices.append(int((row['start'] + row['stop'])/2.0))
+            except:
+                perturbation_indices.append(np.nan)
 	else:
 		logger.info("Perturbation type not recognized. Continuing with perturbation index centered between sgRNA Start and Stop values ...")		
 		for index, row in df.iterrows():

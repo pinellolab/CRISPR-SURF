@@ -118,9 +118,9 @@ def crispr_surf_counts(sgRNA_library, control_fastqs = None, sample_fastqs = Non
 		if 'cas9' in nuclease.lower():
 			for index, row in df.iterrows():
 				try:
-					if row['strand'] == '+':
+					if row['strand'].strip() == '+':
 						perturbation_indices.append(int(min(row['start'], row['stop']) + 17))
-					elif row['strand'] == '-':
+					elif row['strand'].strip() == '-':
 						perturbation_indices.append(int(max(row['start'], row['stop']) - 17))
 					else:
 						perturbation_indices.append(int((row['start'] + row['stop'])/2.0))
@@ -132,9 +132,9 @@ def crispr_surf_counts(sgRNA_library, control_fastqs = None, sample_fastqs = Non
 		elif 'cpf1' in nuclease.lower():
 			for index, row in df.iterrows():
 				try:
-					if row['strand'] == '+':
+					if row['strand'].strip() == '+':
 						perturbation_indices.append(int(max(row['start'], row['stop']) - 1))
-					elif row['strand'] == '-':
+					elif row['strand'].strip() == '-':
 						perturbation_indices.append(int(min(row['start'], row['stop']) + 1))
 					else:
 						perturbation_indices.append(int((row['start'] + row['stop'])/2.0))
@@ -161,9 +161,9 @@ def crispr_surf_counts(sgRNA_library, control_fastqs = None, sample_fastqs = Non
 	elif 'be' in perturbation.lower():
 		for index, row in df.iterrows():
 			try:
-				if row['strand'] == '+':
+				if row['strand'].strip() == '+':
 					perturbation_indices.append(int(min(row['start'], row['stop']) + 6))
-				elif row['strand'] == '-':
+				elif row['strand'].strip() == '-':
 					perturbation_indices.append(int(max(row['start'], row['stop']) - 6))
 				else:
 					perturbation_indices.append(int((row['start'] + row['stop'])/2.0))

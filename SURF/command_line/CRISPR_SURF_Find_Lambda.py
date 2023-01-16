@@ -27,9 +27,13 @@ def crispr_surf_find_lambda(gammas2betas, correlation_start, correlation_stop, c
 		gamma_list = sorted([x for x in gammas2betas[replicate1].keys() if ((x != 'combined') and (x != 'gamma_chosen') and (x != 'padj') and (x != 'indices') and (x != 'chr'))])
 
 		replicate_pair_correlations[replicate_pair_id] = []
-
+		print(gamma_list)
 		for gamma in gamma_list:
-
+			print("gamma")            
+			print(gamma)
+			print(gammas2betas[replicate1][gamma])
+			print(gammas2betas[replicate2][gamma])
+			print(sp.stats.pearsonr(gammas2betas[replicate1][gamma], gammas2betas[replicate2][gamma])[0])
 			replicate_pair_correlations[replicate_pair_id].append(sp.stats.pearsonr(gammas2betas[replicate1][gamma], gammas2betas[replicate2][gamma])[0])
 
 	# Rescale all R2 curves and aggregate to find optimal gamma range

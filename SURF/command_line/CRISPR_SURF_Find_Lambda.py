@@ -20,7 +20,8 @@ def crispr_surf_find_lambda(gammas2betas, correlation_start, correlation_stop, c
 	# Enumerate all pairs of biological replicates and calculate pearson correlation across gamma range
 	replicate_pair_correlations = {}
 	for pair in itertools.combinations([x for x in gammas2betas.keys() if ((x != 'combined') and (x != 'gamma_chosen') and (x != 'padj') and (x != 'indices') and (x != 'chr'))], 2):
-
+		print("pair")
+		print(pair)
 		replicate1, replicate2 = pair[0], pair[1]
 		replicate_pair_id = '-'.join(map(str, [replicate1, replicate2]))
 		gamma_list = sorted([x for x in gammas2betas[replicate1].keys() if ((x != 'combined') and (x != 'gamma_chosen') and (x != 'padj') and (x != 'indices') and (x != 'chr'))])
@@ -32,6 +33,8 @@ def crispr_surf_find_lambda(gammas2betas, correlation_start, correlation_stop, c
 			replicate_pair_correlations[replicate_pair_id].append(sp.stats.pearsonr(gammas2betas[replicate1][gamma], gammas2betas[replicate2][gamma])[0])
 
 	# Rescale all R2 curves and aggregate to find optimal gamma range
+	print("replicate_pair_correlations")
+	print(replicate_pair_correlations)
 	correlation_curve = {}
 	for pair in replicate_pair_correlations:
 

@@ -45,11 +45,20 @@ def crispr_surf_find_lambda(gammas2betas, correlation_start, correlation_stop, c
 	print("Here 2")
 	# Normalize each correlation curve and then average across curves
 	correlation_curve_averaged = [float(sum(correlation_curve[x]))/float(len(correlation_curve[x])) for x in correlation_curve]
+	print("correlation_curve:")
+	print(correlation_curve)
+	print("correlation_curve_averaged:")
+	print(correlation_curve_averaged)
 	correlation_curve_rescaled = [float(x)/float(max(correlation_curve_averaged)) for x in correlation_curve_averaged]
-
+	print("correlation_curve_rescaled:")
+	print(correlation_curve_rescaled)
+    
 	max_index = correlation_curve_rescaled.index(max(correlation_curve_rescaled))
+	print("Max index:") 
+	print(max_index)
 	correlation_curve_rescaled_capped = correlation_curve_rescaled[:max_index + 1]
-
+	print(correlation_curve_rescaled_capped)
+	print("Here 3")
 	# Return optimal gamma range
 	gamma_index_start = min(range(len(correlation_curve_rescaled_capped)), key=lambda i: abs(correlation_curve_rescaled_capped[i] - float(correlation_start)))
 	gamma_index_stop = min(range(len(correlation_curve_rescaled_capped)), key=lambda i: abs(correlation_curve_rescaled_capped[i] - float(correlation_stop)))

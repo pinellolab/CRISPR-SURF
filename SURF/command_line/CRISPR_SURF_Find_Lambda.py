@@ -10,7 +10,13 @@ def crispr_surf_find_lambda(gammas2betas, correlation_start, correlation_stop, c
 	Input is gammas2betas dictionary which is the output of function crispr_surf_deconvolution. Dictionary structure: Keys: 1) Replicate, 2) Gamma
 	The characteristic_perturbation_length and noise parameters inform the Pearson correlation ratio between R2_max and R2_gamma_opt.
 	"""
-
+	print("Test print statement")
+	print("Gamma2betas:")
+	print(gammas2betas)
+	print("Correlation start:")
+	print(correlation_start)
+	print("Correlation stop:")
+	print(correlation_stop)
 	# Enumerate all pairs of biological replicates and calculate pearson correlation across gamma range
 	replicate_pair_correlations = {}
 	for pair in itertools.combinations([x for x in gammas2betas.keys() if ((x != 'combined') and (x != 'gamma_chosen') and (x != 'padj') and (x != 'indices') and (x != 'chr'))], 2):
@@ -36,6 +42,7 @@ def crispr_surf_find_lambda(gammas2betas, correlation_start, correlation_stop, c
 
 			correlation_curve[i].append(replicate_pair_correlations[pair][i])
 
+	print("Here 2")
 	# Normalize each correlation curve and then average across curves
 	correlation_curve_averaged = [float(sum(correlation_curve[x]))/float(len(correlation_curve[x])) for x in correlation_curve]
 	correlation_curve_rescaled = [float(x)/float(max(correlation_curve_averaged)) for x in correlation_curve_averaged]
@@ -54,6 +61,7 @@ def crispr_surf_find_lambda(gammas2betas, correlation_start, correlation_stop, c
 	gamma_stop = gamma_list[gamma_index_stop]
 	gamma_opt = gamma_list[gamma_index_opt]
 
+	print("Now writing to out_dir {}".format(out_dir))
 	with open(out_dir + '/correlation_curve_lambda.csv', 'w') as f:
 		f.write(','.join(map(str, ['Lambda', 'Corr_Avg', 'Corr_Avg_Scaled'])) + '\n')
 

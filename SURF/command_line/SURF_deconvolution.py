@@ -247,7 +247,8 @@ else:
 		(gamma_range, gamma_use) = crispr_surf_find_lambda(gammas2betas = gammas2betas, correlation_start = correlation, correlation_stop = correlation, correlation_opt = correlation, out_dir = out_dir)
 		logger.info('Identified lambda range to be used for downstream deconvolution statistics')
 
-	except:
+	except Exception as e:
+		print(e)
 		logger.error('Failed to identify lambda range ...')
 		sys.exit('Failed to identify lambda range ...')
 

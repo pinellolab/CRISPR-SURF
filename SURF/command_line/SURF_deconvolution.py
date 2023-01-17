@@ -219,6 +219,7 @@ except:
 	logger.error('Please make sure all values in column Perturbation_Index are numbers for sgRNAs that are NOT classified as negative controls ...')
 	sys.exit('Please make sure all values in column Perturbation_Index are numbers for sgRNAs that are NOT classified as negative controls ...')
 
+print(gamma_list)
 for i in range(1, replicates + 1):
 	logger.info('Deconvolving signal for Replicate %s' % str(i))
 
@@ -232,7 +233,8 @@ for i in range(1, replicates + 1):
 	try:
 		gammas2betas[i], guideindices2bin = crispr_surf_deconvolution(observations = observations, chromosomes = chromosomes, sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = gamma_list, scale = scale)
 		
-	except:
+	except Exception as e:
+		print(e)        
 		logger.error('Deconvolution of Replicate %s was not successful. The scale parameter may need to be adjusted ...' % str(i))
 		sys.exit('Deconvolution of Replicate %s was not successful. The scale parameter may need to be adjusted ...' % str(i))
 
@@ -243,7 +245,7 @@ if len(gamma_list) == 1:
 	gamma_use = gamma_list[0]
 
 else:
-	try:
+	try:   
 		(gamma_range, gamma_use) = crispr_surf_find_lambda(gammas2betas = gammas2betas, correlation_start = correlation, correlation_stop = correlation, correlation_opt = correlation, out_dir = out_dir)
 		logger.info('Identified lambda range to be used for downstream deconvolution statistics')
 

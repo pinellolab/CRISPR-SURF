@@ -73,9 +73,9 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 
 	# Make sure scale is integer
 	scale = int(scale)
-
+	print("Here1")
 	if scale > 1:
-
+		print("Here2")
 		# Rescale genomic indices where sgRNAs are tiling
 		bin_indices = np.arange(min(sgRNA_indices), max(sgRNA_indices), scale)
 		rescaled_sgRNA_indices = np.array([(x + int(scale/2.0)) for x in bin_indices]) #  bin_indices[:-1]])
@@ -107,11 +107,12 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 		rescaled_observations = [np.mean(guidescores2bin[x]) for x in rescaled_sgRNA_indices_w_obs]
 
 	else:
+		print("Here3")
 		rescaled_sgRNA_indices = np.array(sgRNA_indices)
 		rescaled_sgRNA_indices_w_obs = np.array(sgRNA_indices)
 		rescaled_observations = np.array(observations)
 		rescaled_chromosomes = np.array(chromosomes)
-
+	print("Here4")
 	# Identify groups within CRISPR tiling screen based on specified perturbation range
 	group_boundaries = [0] + [(i + 1) for (i, j) in zip(range(len(rescaled_sgRNA_indices_w_obs) - 1), np.diff(rescaled_sgRNA_indices_w_obs)) if j > (maximum_distance*scale)] + [len(rescaled_sgRNA_indices_w_obs)]
 	groups = []
@@ -128,6 +129,7 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 	gammas2betas = {}
 	delete_gammas = []
 
+	print("Here5")
 	# Iterate through groups and perform deconvolution
 	for group in df.group.unique():
 
@@ -185,7 +187,7 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 
 	gammas2betas['indices'] = genomic_coordinates
 	gammas2betas['chr'] = chromosomes_final
-
+	print("Here6")
 	return gammas2betas, guideindices2bin
 
 def multiprocessing_deconvolution(argument_list):

@@ -73,7 +73,7 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 
 	# Make sure scale is integer
 	scale = int(scale)
-	print("Here1")
+	print("Heree1")
 	if scale > 1:
 		print("Here2")
 		# Rescale genomic indices where sgRNAs are tiling
@@ -132,9 +132,9 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 	print("Here5")
 	# Iterate through groups and perform deconvolution
 	for group in df.group.unique():
-
+		print("Here6")
 		# print 'Group %s' % group
-
+		print("Here7")
 		# Filtered dataframe to separate individual groups
 		dff = df[df.group == group]
 
@@ -146,26 +146,26 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 		y = [0]*1 + dff.lfc.tolist() + [0]*1
 		# y = np.array(y).reshape(len(y), 1)
 		betas = Variable(len(np.arange(dff.pos.tolist()[0], dff.pos.tolist()[-1], scale).tolist()) + maximum_distance)
-
+		print("Here8")
 		# x_shift = [int(maximum_distance + (x - dff.pos.tolist()[0])/int(scale) - 1) for x in dff.pos.tolist()]
 		x_shift_tmp = [int(maximum_distance + (x - dff.pos.tolist()[0])/int(scale) - 1) for x in dff.pos.tolist()]
 
 		x_shift = list(range(x_shift_tmp[0] - 1, x_shift_tmp[0])) + x_shift_tmp + list(range(x_shift_tmp[-1] + 1, x_shift_tmp[-1] + 2))
-
+		print("Here9")
 		gamma = Parameter(sign = "positive")
 		# gamma = Parameter(nonneg = True)
 
 		genomic_coordinates += np.arange(int(dff.pos.tolist()[0]), int(dff.pos.tolist()[-1]) + scale, scale).tolist()
 		chromosomes_final += [dff['chr'].tolist()[0]]*len(np.arange(int(dff.pos.tolist()[0]), int(dff.pos.tolist()[-1]) + scale, scale).tolist())
-
+		print("Here10")
 		# Formulate optimization problem
 		objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*sum_entries(abs(diff(betas))))
 		# objective = Minimize(0.5*sum_squares(y - conv(perturbation_profile, betas)[x_shift]) + gamma*tv(betas))
 		p = Problem(objective)
-
+		print("Here11")
 		# Solve for varying lambdas
 		for g in gamma_list:
-
+			print("Gamma: {}".format(g))
 			# Make sure solver converges, otherwise delete gammas that fail
 			try:
 
@@ -174,6 +174,7 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 
 				gamma.value = g
 				result = p.solve()
+				print("Here12")
 				gammas2betas[g] += np.array(betas.value).reshape(-1).tolist()[int(maximum_distance/2):-int(maximum_distance/2)]
 
 			except:
@@ -182,12 +183,14 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 				continue
 
 	# Delete gammas that failed to converge
+	print("Here13")
 	for g in delete_gammas:
+		print("Gamma {}".format(g))        
 		del gammas2betas[g]
 
 	gammas2betas['indices'] = genomic_coordinates
 	gammas2betas['chr'] = chromosomes_final
-	print("Here6")
+	print("Here14")
 	return gammas2betas, guideindices2bin
 
 def multiprocessing_deconvolution(argument_list):

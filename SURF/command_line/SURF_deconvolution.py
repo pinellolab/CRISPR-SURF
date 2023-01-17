@@ -234,7 +234,10 @@ for i in range(1, replicates + 1):
 		gammas2betas[i], guideindices2bin = crispr_surf_deconvolution(observations = observations, chromosomes = chromosomes, sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = gamma_list, scale = scale)
 		
 	except Exception as e:
+		print("Exception thrown: ")        
 		print(e)        
+		print("Message end: ")
+		logger.error('Exception message: {}'.format(str(e)) 
 		logger.error('Deconvolution of Replicate %s was not successful. The scale parameter may need to be adjusted ...' % str(i))
 		sys.exit('Deconvolution of Replicate %s was not successful. The scale parameter may need to be adjusted ...' % str(i))
 

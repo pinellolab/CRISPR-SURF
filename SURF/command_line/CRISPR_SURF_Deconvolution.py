@@ -179,8 +179,8 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 
 			except Exception as e:
 				print("Gamma exception: ")
-                print(e)
-                print("Exception message done")
+				print(e)
+				print("Exception message done")
 				delete_gammas.append(g)
 				continue
 

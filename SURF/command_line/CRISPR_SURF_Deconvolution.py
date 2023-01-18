@@ -177,8 +177,10 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 				print("Here12")
 				gammas2betas[g] += np.array(betas.value).reshape(-1).tolist()[int(maximum_distance/2):-int(maximum_distance/2)]
 
-			except:
-
+			except Exception as e:
+				print("Gamma exception: ")
+				print(e)
+				print("Exception message done")
 				delete_gammas.append(g)
 				continue
 
@@ -186,7 +188,7 @@ def crispr_surf_deconvolution(observations, chromosomes, sgRNA_indices, perturba
 	print("Here13")
 	for g in delete_gammas:
 		print("Gamma {}".format(g))        
-		del gammas2betas[g]
+		del gammas2betas[g] # TODO Check that gamma is still in list
 
 	gammas2betas['indices'] = genomic_coordinates
 	gammas2betas['chr'] = chromosomes_final

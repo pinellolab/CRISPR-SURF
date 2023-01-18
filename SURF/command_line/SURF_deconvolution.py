@@ -237,7 +237,7 @@ for i in range(1, replicates + 1):
 		print("Exception thrown: ")        
 		print(e)        
 		print("Message end: ")
-		logger.error('Exception message: {}'.format(str(e)) 
+		logger.error('Exception message: {}'.format(str(e)))
 		logger.error('Deconvolution of Replicate %s was not successful. The scale parameter may need to be adjusted ...' % str(i))
 		sys.exit('Deconvolution of Replicate %s was not successful. The scale parameter may need to be adjusted ...' % str(i))
 

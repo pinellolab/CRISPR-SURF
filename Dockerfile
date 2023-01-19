@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install build-essential zlib1g-dev -y
 
 #add Python dependencies
 RUN apt-get install libreadline-dev -y
+RUN pip install CVXCanon==0.1.0 # ADDED 1/18/2023 - prevent incompatibility between cvxpy and CVXCanon
 RUN pip install cvxpy==0.4.11
 RUN apt-get install unzip libxml2 libxml2-dev -y
 

@@ -3,7 +3,7 @@
 ############################################################
 
 # Set the base image to anaconda python 2.7
-FROM continuumio/anaconda:2019.10
+FROM continuumio/anaconda:5.1.0
 
 # File Author / Maintainer
 MAINTAINER Jonathan Y. Hsu
@@ -17,7 +17,7 @@ RUN conda config --add channels bioconda
 
 #Add build tools
 RUN ln -s /bin/tar /bin/gtar
-RUN apt-get update && apt-get install build-essential zlib1g-dev -y
+RUN apt-get --allow-releaseinfo-change update && apt-get install build-essential zlib1g-dev -y
 
 #add Python dependencies
 RUN apt-get install libreadline-dev -y

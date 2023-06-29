@@ -3,7 +3,7 @@
 ############################################################
 
 # Set the base image to anaconda python 2.7
-FROM continuumio/anaconda:5.1.0
+FROM continuumio/anaconda2
 
 # File Author / Maintainer
 MAINTAINER Jonathan Y. Hsu
@@ -17,14 +17,13 @@ RUN conda config --add channels bioconda
 
 #Add build tools
 RUN ln -s /bin/tar /bin/gtar
-RUN echo "deb http://security.debian.org/debian-security bullseye-security main contrib non-free" > /etc/apt/sources.list
-RUN apt-get --allow-insecure-repositories update && apt-get --allow-insecure-repositories install build-essential zlib1g-dev -y
+RUN apt-get update && apt-get install build-essential zlib1g-dev -y
 
 #add Python dependencies
-RUN apt-get --allow-insecure-repositories install libreadline-dev -y
+RUN apt-get install libreadline-dev -y
 RUN pip install CVXCanon==0.1.0 # ADDED 1/18/2023 - prevent incompatibility between cvxpy and CVXCanon
 RUN pip install cvxpy==0.4.11
-RUN apt-get --allow-insecure-repositories install unzip libxml2 libxml2-dev -y
+RUN apt-get install unzip libxml2 libxml2-dev -y
 
 #website dependencies
 RUN pip install Flask-Compress==1.4.0
@@ -38,7 +37,7 @@ RUN pip install dash-table-experiments
 RUN pip install gunicorn
 
 # install zips
-RUN apt-get --allow-insecure-repositories update && apt-get --allow-insecure-repositories install zip zlib1g liblzo2-dev -y
+RUN apt-get update && apt-get install zip zlib1g liblzo2-dev -y
 
 #new dependencies
 RUN pip install bx-python

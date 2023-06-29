@@ -3,7 +3,7 @@
 ############################################################
 
 # Set the base image to anaconda python 2.7
-FROM continuumio/anaconda3
+FROM continuumio/anaconda:5.1.0
 
 # File Author / Maintainer
 MAINTAINER Jonathan Y. Hsu
@@ -14,16 +14,24 @@ RUN conda install r-base
 RUN conda config --add channels defaults
 RUN conda config --add channels conda-forge
 RUN conda config --add channels bioconda
+RUN conda config --add channels biobuilds
+RUN conda config --add channels anaconda
 
 #Add build tools
 RUN ln -s /bin/tar /bin/gtar
-RUN apt-get update && apt-get install build-essential zlib1g-dev -y
+#RUN apt-get update && apt-get install build-essential zlib1g-dev -y
+RUN conda install -c anaconda zlib-devel-amzn2-aarch64
 
 #add Python dependencies
-RUN apt-get install libreadline-dev -y
+#RUN apt-get install libreadline-dev -y
+RUN conda install -c biobuilds readline-devel
+
 RUN pip install CVXCanon==0.1.0 # ADDED 1/18/2023 - prevent incompatibility between cvxpy and CVXCanon
 RUN pip install cvxpy==0.4.11
-RUN apt-get install unzip libxml2 libxml2-dev -y
+#RUN apt-get install unzip libxml2 libxml2-dev -y
+RUN conda install -c conda-forge unzip
+RUN conda install -c anaconda libxml2
+RUN conda install -c biobuilds libxml2-devel
 
 #website dependencies
 RUN pip install Flask-Compress==1.4.0
@@ -37,8 +45,12 @@ RUN pip install dash-table-experiments
 RUN pip install gunicorn
 
 # install zips
-RUN apt-get update && apt-get install zip zlib1g liblzo2-dev -y
+#RUN apt-get update && apt-get install zip zlib1g liblzo2-dev -y
+RUN conda install -c conda-forge zip
+RUN conda install -c conda-forge zlib
+RUN conda install -c conda-forge lzo
 
+#
 #new dependencies
 RUN pip install bx-python
 RUN git clone https://github.com/lucapinello/bioutilities.git && cd bioutilities/ && python setup.py install

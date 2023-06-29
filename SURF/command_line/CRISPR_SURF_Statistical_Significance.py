@@ -174,23 +174,23 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 				logger.info('Calculated p. values for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
 
 			estimated_beta = beta_distributions[i]
-			# null_betas = beta_distributions_null[i]
-			# beta_pvals.append(2.0*float(max(0.0, min(sum(x >= estimated_beta for x in null_betas), sum(x <= estimated_beta for x in null_betas))))/float(len(null_betas)))
+			null_betas = np.array(beta_distributions_null[i])
+			beta_pvals.append(2.0 * min((null_betas >= estimated_beta).sum(), (null_betas <= estimated_beta).sum()) / float(len(null_betas)))
+	else:
+		null_betas = []
 
 			null_betas = np.array(beta_distributions_null[i])
 			beta_pvals.append(2.0 * min((null_betas >= estimated_beta).sum(), (null_betas <= estimated_beta).sum()) / float(len(null_betas)))
 
 	elif test_type == 'parametric':
 
-		for i in range(len(beta_distributions)):
-
-			if (i + 1)%500 == 0:
-				logger.info('Calculated p. values for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
-
-			estimated_beta = beta_distributions[i]
-			null_betas_loc, null_betas_scale = norm.fit(beta_distributions_null[i])
-			
-			beta_pvals.append(2.0*float(max(0.0, min([norm(loc = null_betas_loc, scale = null_betas_scale).sf(estimated_beta), 1.0 - norm(loc = null_betas_loc, scale = null_betas_scale).sf(estimated_beta)]))))
+		positions = np.searchsorted(np.array(null_betas), [beta_distributions[i] for i in range(len(beta_distributions))])
+		below_median = positions < len(null_betas) / 2
+		# compute pvals as if all values above median
+		pvals = 2.0 * (len(null_betas) - positions) / float(len(null_betas))
+		# compute pvals for subset below median
+		pvals[below_median] = 2.0 * positions[below_median] / float(len(null_betas))
+		beta_pvals = pvals.tolist()
 
 	logger.info('Calculated p. values for %s out of %s betas ...' % (len(beta_distributions), len(beta_distributions)))
 
@@ -211,19 +211,17 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 
 		for i in range(len(beta_corrected_effect_size)):
 
-			# shifted_distribution = [x + beta_corrected_effect_size[i] for x in beta_distributions_null[i]]
-			# percentile_cutoff = np.percentile(beta_distributions_null[i], (100.0 - float(new_p_cutoff)*100.0/2.0))
-
-			beta_dist_null = np.array(beta_distributions_null[i])
-			shifted_distribution = beta_dist_null + beta_corrected_effect_size[i]
+ 			beta_dist_null = np.array(beta_distributions_null[i])
+			shifted_distribution = beta_dist_null + beta_corrected_effect_size
 			percentile_cutoff = np.percentile(beta_dist_null, (100.0 - float(new_p_cutoff)*100.0/2.0))
-
-			if (i + 1)%500 == 0:
+			if (i + 1)%100 == 0:
 				logger.info('Calculated statistical power for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
-
-			# beta_statistical_power.append(float(sum(x >= percentile_cutoff for x in shifted_distribution))/float(len(shifted_distribution)))
-
 			beta_statistical_power.append((shifted_distribution > percentile_cutoff).sum() / float(len(shifted_distribution)))
+
+	else:
+		percentile_cutoff = np.percentile(null_betas, (100.0 - float(new_p_cutoff)*100.0/2.0))
+		j = np.searchsorted(null_betas, percentile_cutoff - np.array(beta_corrected_effect_size), side='right')
+		beta_statistical_power = ((len(null_betas) - j) / float(len(null_betas))).tolist()
 
 		gammas2betas['power'] = beta_statistical_power
 

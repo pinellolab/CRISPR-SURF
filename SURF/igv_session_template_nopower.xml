@@ -6,7 +6,6 @@
         <Resource path="./positive_significant_regions.bed"/>
         <Resource path="./raw_scores.bedgraph"/>
         <Resource path="./negative_significant_regions.bed"/>
-        <Resource path="./statistical_power.bedgraph"/>
     </Resources>
     <Panel height="535" name="DataPanel" width="1423">
         <Track altColor="153,153,153" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,153,153" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" height="100" id="raw_scores.bedgraph" name="raw_scores.bedgraph" normalize="false" renderer="SCATTER_PLOT" sortable="true" visible="true" windowFunction="none">
@@ -23,9 +22,6 @@
         </Track>
         <Track altColor="0,0,178" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="0,204,153" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" height="75" id="neglog10_pvals.bedgraph" name="neglog10_pvals.bedgraph" normalize="false" renderer="BAR_CHART" sortable="true" visible="true" windowFunction="none">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="141.55736" minimum="0.0" type="LINEAR"/>
-        </Track>
-        <Track altColor="0,0,178" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="255,204,153" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" height="50" id="statistical_power.bedgraph" name="statistical_power.bedgraph" normalize="false" renderer="BAR_CHART" sortable="true" visible="true" windowFunction="none">
-            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="1.0" minimum="0.0" type="LINEAR"/>
         </Track>
     </Panel>
     <Panel height="76" name="FeaturePanel" width="1423">

@@ -128,7 +128,7 @@ def index():
 
     data_dict = {'gammas2betas':None, 'guideindices2bin':None, 'computed':False, 'time_per_gamma': 0}
 
-    data_dict2 = {'gammas2betas':None, 'computed':False, 'fdr':0.05}
+    data_dict2 = {'gammas2betas':None, 'computed':False, 'fdr':0.01}
 
     data_dict3 = {'design-clicks':0, 'checkbutton':1, 'pams':['']}
 
@@ -347,6 +347,7 @@ app.layout = html.Div([
                     max=300,
                     step=1,
                     value = 7,
+                    updatemode='drag'
                     ),
 
                 html.Label('Perturbation Profile', style = {'font-weight':'bold'}),
@@ -378,7 +379,8 @@ app.layout = html.Div([
                             min=1,
                             max=50,
                             step=1,
-                            value = 1
+                            value = 1,
+                            updatemode='drag'
                             ),
 
                         html.Label('Lambda List (i.e. 1,2,3,4,5)', style = {'font-weight':'bold'}),
@@ -399,18 +401,8 @@ app.layout = html.Div([
                             min=1,
                             max=500,
                             step=1,
-                            value = 25
-                            ),
-
-                        html.Label('Use Rapid Mode', style = {'font-weight':'bold'}),
-                        dcc.RadioItems(
-                            id = 'rapid',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False},
-                            ],
-                            value = False,
-                            labelStyle={'display': 'inline-block'}
+                            value = 25,
+                            updatemode='drag'
                             ),
 
                         ], className = 'six columns'),
@@ -427,7 +419,7 @@ app.layout = html.Div([
 
                         html.Label('Null Distribution Simulation', style = {'font-weight':'bold'}),
                         dcc.Dropdown(
-                            id = 'sim_type',
+                            id = 'null_distribution',
                             options=[
                                 {'label': 'Gaussian', 'value': 'gaussian'},
                                 {'label': 'Laplace', 'value': 'laplace'},
@@ -436,18 +428,36 @@ app.layout = html.Div([
                             value = 'gaussian',
                         ),
 
-                        html.Label(id = 'simulation-n-show', children = 'Number of Simulations: 200', style = {'font-weight':'bold'}),
+                        html.Label(id = 'simulation-n-show', children = 'Number of Simulations: 100', style = {'font-weight':'bold'}),
                         dcc.Slider(
                             id = 'sim_n',
                             min=100,
-                            max=10000,
-                            step=100,
-                            value = 200,
+                            max=1000,
+                            step=50,
+                            value = 100,
+                            marks={
+                                200: {'label': '200'},
+                                400: {'label': '400'},
+                                600: {'label': '600'},
+                                800: {'label': '800'},
+                                1000: {'label': '1000'},
+                            },
+                            updatemode='drag'
                             ),
 
                         ], className = 'six columns'),
 
                     html.Div([
+
+                        html.Label('Test Type', style = {'font-weight':'bold'}),
+                        dcc.Dropdown(
+                            id = 'test_type',
+                            options=[
+                                {'label': 'Parametric', 'value': 'parametric'},
+                                {'label': 'Non-parametric', 'value': 'nonparametric'},
+                            ],
+                            value = 'parametric',
+                        ),
 
                         html.Label('Effect Size', style = {'font-weight':'bold'}),
                         dcc.Input(
@@ -487,11 +497,11 @@ app.layout = html.Div([
                 html.Label('Lambda List', style = {'font-weight':'bold'}),
                 html.Div(['List of lambdas to use for deconvolution computation.']),
 
-                html.Label('Use Rapid Mode', style = {'font-weight':'bold'}),
-                html.Div(['Rapid mode aggregates null distributions across all bps. Speeds up computation at the cost of eliminating density-aware statistical tests.']),
-
                 html.Label('Null Distribution Simulation', style = {'font-weight':'bold'}),
                 html.Div(['Method for determining null L2FC distribution to undergo deconvolution simulations. Gaussian and Laplace parameterize observed and negative control sgRNAs. Negative Control sgRNAs samples from only negative control sgRNA L2FC scores.']),
+
+                html.Label('Test Type', style = {'font-weight':'bold'}),
+                html.Div(['Parametric or non-parametric statistical test for betas.']),
 
                 html.Label('Number of Simulations', style = {'font-weight':'bold'}),
                 html.Div(['Number of deconvolution simulations to construct null distribution.']),
@@ -593,7 +603,18 @@ app.layout = html.Div([
                             max=1.0,
                             step=0.01,
                             value = 0.8,
+                            marks={
+                                0.5: {'label': '0.5'},
+                                0.6: {'label': '0.6'},
+                                0.7: {'label': '0.7'},
+                                0.8: {'label': '0.8'},
+                                0.9: {'label': '0.9'},
+                                1.0: {'label': '1.0'},
+                            },
+                            updatemode='drag'
                             ),
+
+                        html.Br(),
 
                         ], className = 'six columns')
 
@@ -690,14 +711,24 @@ app.layout = html.Div([
 
                     html.Div([
 
-                        html.Label(id = 'fdr-show', children = 'FDR < 0.05', style = {'font-weight':'bold'}),
+                        html.Label(id = 'fdr-show', children = 'FDR < 0.01', style = {'font-weight':'bold'}),
                         dcc.Slider(
                             id = 'fdr',
-                            min=0.01,
-                            max=0.25,
-                            step=0.01,
-                            value = 0.05,
+                            min=-5,
+                            max=-1,
+                            step=1,
+                            value = -2,
+                            marks={
+                                -1: {'label': '0.1'},
+                                -2: {'label': '0.01'},
+                                -3: {'label': '0.001'},
+                                -4: {'label': '0.0001'},
+                                -5: {'label': '0.00001'},
+                            },
+                            updatemode='drag'
                             ),
+
+                        html.Br(),
 
                         ], className = 'six columns')
 
@@ -1187,29 +1218,34 @@ def download_file(contents, filename, n_clicks, pathname):
             df = parse_contents(contents, filename)
             if df is not None:
 
-                if all(x in df.columns for x in ['Chr', 'Start', 'Stop', 'Perturbation_Index', 'sgRNA_Sequence', 'Strand', 'sgRNA_Type', 'Log2FC_Replicate1']):
-                    df.to_csv(UPLOADS_FOLDER + '/sgRNAs_summary_table.csv', index = False)
+                if all(x in df.columns for x in ['Chr', 'Start', 'Stop', 'Perturbation_Index', 'sgRNA_Sequence', 'Strand', 'sgRNA_Type', 'Log2FC_Replicate1', 'Log2FC_Replicate2']):
 
-                    with open(UPLOADS_FOLDER + '/data.json', 'r') as f:
-                        json_string = f.readline().strip()
-                        data_dict = json.loads(json_string)
+                    if len(df.index) <= 10000:
+                        df.to_csv(UPLOADS_FOLDER + '/sgRNAs_summary_table.csv', index = False)
 
-                    with open(UPLOADS_FOLDER + '/data2.json', 'r') as f:
-                        json_string = f.readline().strip()
-                        data_dict2 = json.loads(json_string)
+                        with open(UPLOADS_FOLDER + '/data.json', 'r') as f:
+                            json_string = f.readline().strip()
+                            data_dict = json.loads(json_string)
 
-                    data_dict['chr'] = [str(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Chr']).flatten().tolist()][0]
-                    data_dict2['chr'] = [str(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Chr']).flatten().tolist()][0]
+                        with open(UPLOADS_FOLDER + '/data2.json', 'r') as f:
+                            json_string = f.readline().strip()
+                            data_dict2 = json.loads(json_string)
 
-                    with open(UPLOADS_FOLDER + '/data.json', 'w') as f:
-                        new_json_string = json.dumps(data_dict)
-                        f.write(new_json_string + '\n')
+                        data_dict['chr'] = [str(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Chr']).flatten().tolist()][0]
+                        data_dict2['chr'] = [str(x) for x in np.array(df.loc[df['sgRNA_Type'] != 'negative_control', 'Chr']).flatten().tolist()][0]
 
-                    with open(UPLOADS_FOLDER + '/data2.json', 'w') as f:
-                        new_json_string = json.dumps(data_dict)
-                        f.write(new_json_string + '\n')
+                        with open(UPLOADS_FOLDER + '/data.json', 'w') as f:
+                            new_json_string = json.dumps(data_dict)
+                            f.write(new_json_string + '\n')
 
-                    return 'Upload Status: Complete'
+                        with open(UPLOADS_FOLDER + '/data2.json', 'w') as f:
+                            new_json_string = json.dumps(data_dict)
+                            f.write(new_json_string + '\n')
+
+                        return 'Upload Status: Complete'
+
+                    else:
+                        return 'Upload Status: Incomplete (Exceeded 10K sgRNA limit)'
 
                 else:
                     return 'Upload Status: Incomplete (Required Columns - Chr, Start, Stop, Perturbation_Index, sgRNA_Sequence, Strand, sgRNA_Type, Log2FC_Replicate1, etc.)'
@@ -1568,10 +1604,10 @@ def update_simulation_n(simulation_n, pathname):
     return 'Number of Simulations: %s' % int(simulation_n)
 
 @app.callback(Output('tmp4', 'style'),
-              [Input('sim_type', 'value')],
+              [Input('null_distribution', 'value')],
               state = [State('url', 'pathname')])
 
-def update_simulation_n(simulation_type, pathname):
+def update_simulation_n(null_distribution, pathname):
 
     UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
     RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
@@ -1587,7 +1623,7 @@ def update_simulation_n(simulation_type, pathname):
             except:
                 pass
 
-    data_dict['sim_type'] = simulation_type
+    data_dict['null_distribution'] = null_distribution
 
     with open(UPLOADS_FOLDER + '/data.json', 'w') as f:
         new_json_string = json.dumps(data_dict)
@@ -1632,15 +1668,15 @@ def update_effect_size(effect_size, pathname):
     State('limit', 'value'),
     State('gamma_list', 'value'),
     State('avg', 'value'),
-    State('sim_type', 'value'),
+    State('null_distribution', 'value'),
     State('sim_n', 'value'),
+    State('test_type', 'value'),
     State('effect_size', 'value'),
-    State('rapid', 'value'),
     State('genome', 'value'),
     State('pert', 'value'),
     State('url', 'pathname')])
 
-def perform_deconvolution(n_clicks, range_val, scale_val, limit_val, gamma_list, avg, sim_type, sim_n, effect_size, rapid, genome, pert_type, pathname):
+def perform_deconvolution(n_clicks, range_val, scale_val, limit_val, gamma_list, avg, null_distribution, sim_n, test_type, effect_size, genome, pert_type, pathname):
 
     if n_clicks > 0:
 
@@ -1702,10 +1738,10 @@ def perform_deconvolution(n_clicks, range_val, scale_val, limit_val, gamma_list,
         data_dict['scale'] = scale_val
         data_dict['limit'] = limit_val
         data_dict['avg'] = avg
-        data_dict['sim_type'] = sim_type
+        data_dict['null_distribution'] = null_distribution
         data_dict['sim_n'] = sim_n
+        data_dict['test_type'] = test_type
         data_dict['effect_size'] = effect_size
-        data_dict['rapid'] = rapid
         data_dict['genome'] = genome
         data_dict['pert'] = pert_type
         data_dict['range'] = range_val
@@ -2032,10 +2068,10 @@ def update_deconvolution_plot(update_graph_clicks, chrom_opt, avg, scale_val, ch
             height=600,
             autosize = True,
             xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[min(indices_filt)-1000, max(indices_filt)+1000]},
-            yaxis={'domain':[0, 0.5], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
-            yaxis2={'domain':[0.5, 1], 'showgrid': False, 'title': 'Deconvolution'},
-            hovermode='closest',
-            title='Raw Scores and Deconvolution')
+            yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Enrichment Scores', 'autorange':True},
+            yaxis2={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution'},
+            hovermode='closest')
+            # title='Raw Scores and Deconvolution')
 
         param_dict['deconvolution-clicks'] += 1
         param_dict['checkbutton1'] = deconvolution_n_clicks + 1
@@ -2152,20 +2188,20 @@ def update_deconvolution_plot(update_graph_clicks, chrom_opt, avg, scale_val, ch
                 height=600,
                 autosize = True,
                 xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
-                yaxis={'domain':[0, 0.5], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
-                yaxis2={'domain':[0.5, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
-                hovermode='closest',
-                title='Raw Scores and Deconvolution')
+                yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Enrichment Scores', 'autorange':True},
+                yaxis2={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
+                hovermode='closest')
+                # title='Raw Scores and Deconvolution')
 
         except:
             fig['layout'].update(
                 height=600,
                 autosize = True,
                 xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False},
-                yaxis={'domain':[0, 0.5], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
-                yaxis2={'domain':[0.5, 1], 'showgrid': False, 'title': 'Deconvolution'},
-                hovermode='closest',
-                title='Raw Scores and Deconvolution')
+                yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Enrichment Scores', 'autorange':True},
+                yaxis2={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution'},
+                hovermode='closest')
+                # title='Raw Scores and Deconvolution')
 
         param_dict['deconvolution-clicks'] += 1
         param_dict['checkbutton1'] = deconvolution_n_clicks + 1
@@ -2363,13 +2399,13 @@ def update_fdr_label(fdr, figure, pathname):
             except:
                 pass
 
-    data_dict2['fdr'] = fdr
+    data_dict2['fdr'] = 10.0**fdr
 
     with open(UPLOADS_FOLDER + '/data2.json', 'w') as f:
             new_json_string = json.dumps(data_dict2)
             f.write(new_json_string + '\n')
 
-    return 'FDR < %s' % fdr
+    return 'FDR < %s' % 10.0**fdr
 
 @app.callback(Output('chr2', 'value'),
               [Input('sgRNA-table-view', 'rows')],
@@ -2434,26 +2470,38 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
             except:
                 pass
 
+    fdr = 10.0**fdr
+
     if os.path.exists(RESULTS_FOLDER + '/flag2.txt'):
 
         sb.call('rm %s/flag2.txt' % RESULTS_FOLDER, shell = True)
 
-        fig = tools.make_subplots(rows=2, cols=1, specs=[[{}], [{}]],
+        fig = tools.make_subplots(rows=3, cols=1, specs=[[{}], [{}], [{}]],
                                   shared_xaxes=True, shared_yaxes=True,
-                                  vertical_spacing=0.1)
+                                  vertical_spacing=0.5)
 
         gammas2betas = data_dict2['gammas2betas']
+
+        padj_min = np.min([float(x) for x in gammas2betas['padj'] if str(x) != 'nan' and float(x) > 0])
 
         # Filter for chrom
         indices_filt = []
         y_p_filt = []
         power_filt = []
+        neglog10_pval_filt = []
 
-        for chrom_i, coord_i, value_i, power_i in zip(gammas2betas['chr'], gammas2betas['indices'], gammas2betas['combined'], gammas2betas['power']):
-            if chrom_i == data_dict2['chr']:
+        for chrom_i, coord_i, value_i, power_i, pval_adj_i in zip(gammas2betas['chr'], gammas2betas['indices'], gammas2betas['combined'], gammas2betas['power'], gammas2betas['padj']):
+            if chrom_i == chrom:
                 indices_filt.append(int(coord_i))
                 y_p_filt.append(float(value_i))
                 power_filt.append(float(power_i))
+
+                if float(pval_adj_i) > 0:
+                    neglog10_pval = -math.log10(float(pval_adj_i))
+                else:
+                    neglog10_pval = -math.log10(padj_min)
+
+                neglog10_pval_filt.append(float(neglog10_pval))
 
         # Boundaries of inference
         diff_vec = [0] + list(np.diff(indices_filt))
@@ -2481,7 +2529,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                 fill='tozeroy',
                 showlegend=False,
                 # yaxis = 'y2',
-                line=dict(color='rgb(255,165,0)')), 1, 1)
+                line=dict(color='rgb(255,204,102)')), 1, 1)
 
         for i in range(len(boundaries) - 1):
             start_index, stop_index = boundaries[i], boundaries[i + 1]
@@ -2493,7 +2541,20 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                 fill='tozeroy',
                 showlegend=False,
                 yaxis = 'y2',
-                line=dict(color='rgb(169,169,169)')), 2, 1)
+                line=dict(color='rgb(169,169,169)')), 3, 1)
+
+        # plot negative log10 pvals
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + neglog10_pval_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                # yaxis = 'y2',
+                line=dict(color='rgb(0,204,153)')), 2, 1)
 
         # Find indices with significant padj-values
         significant_boundary_indices = []
@@ -2526,7 +2587,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
-                    line=dict(color='rgb(255,204,204)', width = 5)), 2, 1)
+                    line=dict(color='rgb(255,204,204)', width = 5)), 3, 1)
 
                 fig.append_trace(go.Scatter(
                     x=[genomic_boundary_start, genomic_boundary_stop],
@@ -2535,7 +2596,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     # fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
-                    line=dict(color='rgb(255,0,0)', width = 5)), 2, 1)
+                    line=dict(color='rgb(255,0,0)', width = 5)), 3, 1)
             else:
                 fig.append_trace(go.Scatter(
                     x=[genomic_boundary_start, genomic_boundary_stop],
@@ -2544,7 +2605,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
-                    line=dict(color='#bbddff', width = 5)), 2, 1)
+                    line=dict(color='#bbddff', width = 5)), 3, 1)
 
                 fig.append_trace(go.Scatter(
                     x=[genomic_boundary_start, genomic_boundary_stop],
@@ -2553,7 +2614,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     # fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
-                    line=dict(color='rgb(30,144,255)', width = 5)), 2, 1)
+                    line=dict(color='rgb(30,144,255)', width = 5)), 3, 1)
 
         # for i in range(len(boundaries) - 1):
         #     start_index, stop_index = boundaries[i], boundaries[i + 1]
@@ -2580,13 +2641,14 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
         #         line=dict(color='rgb(169,169,169)')), 2, 1)
 
         fig['layout'].update(
-            height=600,
+            height=800,
             autosize = True,
             xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[min(indices_filt)-1000, max(indices_filt)+1000]},
-            yaxis={'domain':[0, 0.5], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
-            yaxis2={'domain':[0.5, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
-            hovermode='closest',
-            title='Finding Regions')
+            yaxis={'domain':[0, 0.225], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+            yaxis2={'domain':[0.275, 0.5], 'showgrid': False, 'title': '-log10 P-values', 'autorange':True},
+            yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
+            hovermode='closest')
+            #title='Finding Regions')
 
         param_dict['significance-clicks'] += 1
         param_dict['checkbutton2'] = significance_n_clicks + 1
@@ -2604,22 +2666,32 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
 
     elif (update_graph_clicks > 0) and (loading_style == {'display': 'none'}):
 
-        fig = tools.make_subplots(rows=2, cols=1, specs=[[{}], [{}]],
+        fig = tools.make_subplots(rows=3, cols=1, specs=[[{}], [{}], [{}]],
                                   shared_xaxes=True, shared_yaxes=True,
-                                  vertical_spacing=0.1)
+                                  vertical_spacing=0.5)
 
         gammas2betas = data_dict2['gammas2betas']
+
+        padj_min = np.min([float(x) for x in gammas2betas['padj'] if str(x) != 'nan' and float(x) > 0])
 
         # Filter for chrom
         indices_filt = []
         y_p_filt = []
         power_filt = []
+        neglog10_pval_filt = []
 
-        for chrom_i, coord_i, value_i, power_i in zip(gammas2betas['chr'], gammas2betas['indices'], gammas2betas['combined'], gammas2betas['power']):
+        for chrom_i, coord_i, value_i, power_i, pval_adj_i in zip(gammas2betas['chr'], gammas2betas['indices'], gammas2betas['combined'], gammas2betas['power'], gammas2betas['padj']):
             if chrom_i == chrom:
                 indices_filt.append(int(coord_i))
                 y_p_filt.append(float(value_i))
                 power_filt.append(float(power_i))
+
+                if float(pval_adj_i) > 0:
+                    neglog10_pval = -math.log10(float(pval_adj_i))
+                else:
+                    neglog10_pval = -math.log10(padj_min)
+
+                neglog10_pval_filt.append(float(neglog10_pval))
 
         # Boundaries of inference
         diff_vec = [0] + list(np.diff(indices_filt))
@@ -2647,7 +2719,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                 fill='tozeroy',
                 showlegend=False,
                 # yaxis = 'y2',
-                line=dict(color='rgb(255,165,0)')), 1, 1)
+                line=dict(color='rgb(255,204,102)')), 1, 1)
 
         for i in range(len(boundaries) - 1):
             start_index, stop_index = boundaries[i], boundaries[i + 1]
@@ -2659,7 +2731,20 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                 fill='tozeroy',
                 showlegend=False,
                 yaxis = 'y2',
-                line=dict(color='rgb(169,169,169)')), 2, 1)
+                line=dict(color='rgb(169,169,169)')), 3, 1)
+
+        # plot negative log10 pvals
+        for i in range(len(boundaries) - 1):
+            start_index, stop_index = boundaries[i], boundaries[i + 1]
+
+            fig.append_trace(go.Scatter(
+                x=[indices_filt[start_index] - 1] + indices_filt[start_index:stop_index] + [indices_filt[stop_index - 1] + 1],
+                y=[0] + neglog10_pval_filt[start_index:stop_index] + [0],
+                mode = 'lines',
+                fill='tozeroy',
+                showlegend=False,
+                # yaxis = 'y2',
+                line=dict(color='rgb(0,204,153)')), 2, 1)
 
         # Find indices with significant padj-values
         significant_boundary_indices = []
@@ -2692,7 +2777,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
-                    line=dict(color='rgb(255,204,204)', width = 5)), 2, 1)
+                    line=dict(color='rgb(255,204,204)', width = 5)), 3, 1)
 
                 fig.append_trace(go.Scatter(
                     x=[genomic_boundary_start, genomic_boundary_stop],
@@ -2701,7 +2786,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     # fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
-                    line=dict(color='rgb(255,0,0)', width = 5)), 2, 1)
+                    line=dict(color='rgb(255,0,0)', width = 5)), 3, 1)
 
             else:
                 fig.append_trace(go.Scatter(
@@ -2711,7 +2796,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
-                    line=dict(color='#bbddff', width = 5)), 2, 1)
+                    line=dict(color='#bbddff', width = 5)), 3, 1)
 
                 fig.append_trace(go.Scatter(
                     x=[genomic_boundary_start, genomic_boundary_stop],
@@ -2720,7 +2805,7 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
                     # fill='tozeroy',
                     showlegend=False,
                     yaxis = 'y2',
-                    line=dict(color='rgb(30,144,255)', width = 5)), 2, 1)
+                    line=dict(color='rgb(30,144,255)', width = 5)), 3, 1)
 
         # for i in range(len(boundaries) - 1):
         #     start_index, stop_index = boundaries[i], boundaries[i + 1]
@@ -2750,23 +2835,25 @@ def update_significance_plot(update_graph_clicks, chrom_opt, scale_val, chrom, s
             start = int(start)
             stop = int(stop)
             fig['layout'].update(
-                height=600,
+                height=800,
                 autosize = True,
                 xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
-                yaxis={'domain':[0, 0.5], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
-                yaxis2={'domain':[0.5, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
-                hovermode='closest',
-                title='Finding Regions')
+                yaxis={'domain':[0, 0.225], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+                yaxis2={'domain':[0.275, 0.5], 'showgrid': False, 'title': '-log10 P-values', 'autorange':True},
+                yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
+                hovermode='closest')
+                #title='Finding Regions')
 
         except:
             fig['layout'].update(
-                height=600,
+                height=800,
                 autosize = True,
                 xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[min(indices_filt)-1000, max(indices_filt)+1000]},
-                yaxis={'domain':[0, 0.5], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
-                yaxis2={'domain':[0.5, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
-                hovermode='closest',
-                title='Finding Regions')
+                yaxis={'domain':[0, 0.225], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+                yaxis2={'domain':[0.275, 0.5], 'showgrid': False, 'title': '-log10 P-values', 'autorange':True},
+                yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
+                hovermode='closest')
+                #title='Finding Regions')
 
         param_dict['significance-clicks'] += 1
         param_dict['checkbutton2'] = significance_n_clicks + 1
@@ -2809,7 +2896,7 @@ def zip_dir(n_clicks, pathname, title_input, description_input, perturbation_typ
                         'perturbation': perturbation_type,
                         'range': perturbation_range,
                         'scale': scale,
-                        'fdr': fdr}
+                        'fdr': 10.0**fdr}
 
             with open('%s/surf.json' % (RESULTS_FOLDER), 'w') as f:
                 json_string = json.dumps(json_file)
@@ -3230,22 +3317,22 @@ def update_deconvolution_plot(dataset, update_graph_clicks, tab, chrom, start, s
             height=800,
             autosize = True,
             xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False, 'range':[start, stop]},
-            yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
-            yaxis2={'domain':[0.45, 0.55], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+            yaxis={'domain':[0, 0.225], 'showgrid': False, 'title': 'Enrichment Scores', 'autorange':True},
+            yaxis2={'domain':[0.275, 0.5], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
             yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
-            hovermode='closest',
-            title='Raw Scores and Deconvolution')
+            hovermode='closest')
+            # title='Raw Scores and Deconvolution')
 
     except:
         fig['layout'].update(
             height=800,
             autosize = True,
             xaxis={'type': 'linear', 'title': 'Genomic Coordinate', 'showgrid': False},
-            yaxis={'domain':[0, 0.4], 'showgrid': False, 'title': 'Log2FC Scores', 'autorange':True},
-            yaxis2={'domain':[0.45, 0.55], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
+            yaxis={'domain':[0, 0.225], 'showgrid': False, 'title': 'Enrichment Scores', 'autorange':True},
+            yaxis2={'domain':[0.275, 0.5], 'showgrid': False, 'title': 'Statistical Power', 'autorange':True},
             yaxis3={'domain':[0.6, 1], 'showgrid': False, 'title': 'Deconvolution', 'autorange':True},
-            hovermode='closest',
-            title='Raw Scores and Deconvolution')
+            hovermode='closest')
+            # title='Raw Scores and Deconvolution')
 
     return fig
 

@@ -60,7 +60,7 @@ def crispr_surf_deconvolved_signal(gammas2betas, gamma_chosen, averaging_method,
 
 	return gammas2betas
 
-def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, perturbation_profile, gammas2betas, simulation_type, simulation_n, guideindices2bin, averaging_method, padj_cutoffs, effect_size, limit, scale, rapid_mode):
+def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, perturbation_profile, gammas2betas, null_distribution, simulation_n, test_type, guideindices2bin, averaging_method, padj_cutoffs, effect_size, limit, scale, estimate_statistical_power):
 
 	"""
 	Function to assess the statistical significance of deconvolved genomic signal.
@@ -83,12 +83,12 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	# Decide how to draw from null distribution and perform deconvolution on simulated null arrays
 	logger.info('Performing %s simulations to construct beta null distributions ...' % (simulation_n))
 
-	if simulation_type == 'negative_control':
+	if null_distribution == 'negative_control':
 		if 'negative_control' not in df_summary_table['sgRNA_Type'].unique().tolist():
-			simulation_type = 'gaussian'
+			null_distribution = 'gaussian'
 
 	replicate_parameters = []
-	if simulation_type == 'negative_control':
+	if null_distribution == 'negative_control':
 
 		replicate_parameters.append('NA')
 
@@ -100,10 +100,9 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 		# Construct many simulated null arrays to perform deconvolution
 		beta_distributions_null = crispr_surf_deconvolution_simulations(negative_control_scores = ['negative_control_guides', negative_control_guide_scores], sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = [gamma_chosen], simulations_n = simulation_n, replicates = replicates, guideindices2bin = guideindices2bin, averaging_method = averaging_method, scale = scale)
 
-	elif simulation_type == 'laplace':
+	elif null_distribution == 'laplace':
 
 		# Parameterize observed signal with laplace distribution (assume majority of observation sgRNAs are null)
-		observation_median = np.median()
 		for i in range(1, int(replicates) + 1):
 
 			# # Remove distribution skew
@@ -132,7 +131,7 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 		# Construct many simulated null arrays to perform deconvolution
 		beta_distributions_null = crispr_surf_deconvolution_simulations(negative_control_scores = ['laplace', replicate_parameters], sgRNA_indices = sgRNA_indices, perturbation_profile = perturbation_profile, gamma_list = [gamma_chosen], simulations_n = simulation_n, replicates = replicates, guideindices2bin = guideindices2bin, averaging_method = averaging_method, scale = scale)
 
-	elif simulation_type == 'gaussian':
+	elif null_distribution == 'gaussian':
 
 		# Parameterize observed signal with gaussian distribution (assume majority of observation sgRNAs are null)
 		for i in range(1, int(replicates) + 1):
@@ -167,10 +166,11 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	logger.info('Calculating p. values for %s betas ...' % (len(beta_distributions)))
 
 	beta_pvals = []
-	if rapid_mode.lower() in ['f', 'false', 'no']:
+	if test_type == 'nonparametric':
+
 		for i in range(len(beta_distributions)):
 
-			if (i + 1)%100 == 0:
+			if (i + 1)%500 == 0:
 				logger.info('Calculated p. values for %s out of %s betas ...' % ((i + 1), len(beta_distributions)))
 
 			estimated_beta = beta_distributions[i]
@@ -179,11 +179,10 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	else:
 		null_betas = []
 
-		for i in range(len(beta_distributions_null)):
-			null_betas += beta_distributions_null[i]
+			null_betas = np.array(beta_distributions_null[i])
+			beta_pvals.append(2.0 * min((null_betas >= estimated_beta).sum(), (null_betas <= estimated_beta).sum()) / float(len(null_betas)))
 
-		null_betas = sorted(null_betas)
-		logger.info('Aggregated beta null distribution size: %s ...' % (len(null_betas)))
+	elif test_type == 'parametric':
 
 		positions = np.searchsorted(np.array(null_betas), [beta_distributions[i] for i in range(len(beta_distributions))])
 		below_median = positions < len(null_betas) / 2
@@ -202,14 +201,13 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 	new_p_cutoff = beta_pvals[pymin(range(len(beta_pvals_adj)), key=lambda i: pyabs(beta_pvals_adj[i] - float(padj_cutoffs[0])))]
 	
 	# Estimate statistical power
-	beta_statistical_power = []
-	if scale > 1:
-		beta_corrected_effect_size = crispr_surf_statistical_power(sgRNA_indices = guideindices2bin.keys(), gammas2betas = gammas2betas, effect_size = effect_size, gamma_chosen = gamma_chosen, perturbation_profile = perturbation_profile, scale = scale)
+	if estimate_statistical_power == 'yes':
+		beta_statistical_power = []
+		if scale > 1:
+			beta_corrected_effect_size = crispr_surf_statistical_power(sgRNA_indices = guideindices2bin.keys(), gammas2betas = gammas2betas, effect_size = effect_size, gamma_chosen = gamma_chosen, perturbation_profile = perturbation_profile, scale = scale)
 
-	else:
-		beta_corrected_effect_size = crispr_surf_statistical_power(sgRNA_indices = sgRNA_indices, gammas2betas = gammas2betas, effect_size = effect_size, gamma_chosen = gamma_chosen, perturbation_profile = perturbation_profile, scale = scale)
-
-	if rapid_mode.lower() in ['f', 'false', 'no']:
+		else:
+			beta_corrected_effect_size = crispr_surf_statistical_power(sgRNA_indices = sgRNA_indices, gammas2betas = gammas2betas, effect_size = effect_size, gamma_chosen = gamma_chosen, perturbation_profile = perturbation_profile, scale = scale)
 
 		for i in range(len(beta_corrected_effect_size)):
 
@@ -225,6 +223,6 @@ def crispr_surf_statistical_significance(sgRNA_summary_table, sgRNA_indices, per
 		j = np.searchsorted(null_betas, percentile_cutoff - np.array(beta_corrected_effect_size), side='right')
 		beta_statistical_power = ((len(null_betas) - j) / float(len(null_betas))).tolist()
 
-	gammas2betas['power'] = beta_statistical_power
+		gammas2betas['power'] = beta_statistical_power
 
 	return gammas2betas, replicate_parameters

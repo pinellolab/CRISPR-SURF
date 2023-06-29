@@ -21,10 +21,12 @@ RUN apt-get update && apt-get install build-essential zlib1g-dev -y
 
 #add Python dependencies
 RUN apt-get install libreadline-dev -y
+RUN pip install CVXCanon==0.1.0 # ADDED 1/18/2023 - prevent incompatibility between cvxpy and CVXCanon
 RUN pip install cvxpy==0.4.11
 RUN apt-get install unzip libxml2 libxml2-dev -y
 
 #website dependencies
+RUN pip install Flask-Compress==1.4.0
 RUN pip install dash==0.21.0  # The core dash backend
 RUN pip install dash-renderer==0.12.1  # The dash front-end
 RUN pip install dash-html-components==0.8.0  # HTML components

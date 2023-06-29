@@ -17,7 +17,8 @@ RUN conda config --add channels bioconda
 
 #Add build tools
 RUN ln -s /bin/tar /bin/gtar
-RUN apt-get --allow-releaseinfo-change-suite update && apt-get install build-essential zlib1g-dev -y
+RUN echo "deb http://security.debian.org/debian-security bullseye-security main contrib non-free" > /etc/apt/sources.list
+RUN apt-get update && apt-get install build-essential zlib1g-dev -y
 
 #add Python dependencies
 RUN apt-get install libreadline-dev -y

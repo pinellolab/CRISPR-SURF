@@ -3,7 +3,7 @@
 ############################################################
 
 # Set the base image to anaconda python 2.7
-FROM continuumio/anaconda:5.1.0
+FROM continuumio/anaconda:2019.10
 
 # File Author / Maintainer
 MAINTAINER Jonathan Y. Hsu

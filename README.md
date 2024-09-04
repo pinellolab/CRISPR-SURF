@@ -42,7 +42,7 @@ Users can specify the following options:
 **Running CRISPR-SURF Design Yourself**
 
 ```
-docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_design -bed BED_FILE -genome 2BIT_GENOME_FILE -pams [ATCG]GG TTT[ACG] -orient left right –out example_run
+docker run -v ${PWD}/:/DATA -w /DATA pinellolab/crisprsurf SURF_design -bed BED_FILE -genome 2BIT_GENOME_FILE -pams [ATCG]GG TTT[ACG] -orient left right -out example_run
 ```
 
 **IMPORTANT:** The BED_FILE and 2BIT_GENOME_FILE must be in the working directory where the command-line code is run.
